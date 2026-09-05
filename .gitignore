@@ -1,5 +1,42 @@
-node_modules
-# Keep environment variables out of version control
-.env
+# dependências
+node_modules/
+.pnp
+.pnp.*
 
-/generated/prisma
+# Next.js
+/.next/
+/out/
+/build
+next-env.d.ts
+
+# Prisma — client gerado (nunca versionar, é recriado por `prisma generate`)
+/generated/
+/prisma/generated/
+
+# variáveis de ambiente — nunca versionar segredos
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# uploads do adaptador de storage local (dev)
+/public/uploads/
+/uploads/
+
+# TypeScript
+*.tsbuildinfo
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# sistema operacional
+.DS_Store
+Thumbs.db
+desktop.ini
+*.pem
+
+# deploy
+.vercel
