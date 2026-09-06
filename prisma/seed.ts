@@ -1,27 +1,32 @@
 /**
  * SEED DE DEMONSTRAÇÃO
  *
- * ATENÇÃO, LEIA ANTES DE MOSTRAR ESTE SITE AO CLIENTE:
+ * LEIA ANTES DE MOSTRAR ESTE SITE AO CLIENTE.
  *
- * O cardápio real da Dalami (7 categorias, 21 sabores, preços por tamanho)
- * ainda NÃO foi recebido. O arquivo `cardapio-dalami-seed.json` citado no
- * briefing não existe, e o PDF do cliente também não.
+ * O cardápio real da Dalami ainda NÃO foi recebido. Tudo aqui é um cardápio
+ * de EXEMPLO plausível para uma confeitaria e cafeteria de bairro, montado só
+ * para a tela não ficar vazia e para o admin ter o que editar.
  *
- * Tudo marcado com FICTÍCIO abaixo foi INVENTADO só para a tela não ficar
- * vazia. Nenhum nome de sabor, preço, descrição, endereço ou telefone daqui
- * é informação real do negócio.
+ * É PLACEHOLDER e deve ser substituído inteiro quando o cardápio real chegar:
+ *   - nomes de item, descrições e preços
+ *   - o texto institucional da seção Sobre
+ *   - endereço, região, número de WhatsApp e link do iFood
+ *   - o horário de funcionamento
  *
  * O que É real e pode ficar:
- *   - as fotos dos bolos (são do PDF do próprio cliente)
+ *   - as fotos (são fotos de estúdio de verdade, usadas aqui só como
+ *     fotografia de produto de exemplo; NÃO representam o cardápio do cliente)
  *   - o Instagram @dalamicafeteria
- *   - as frases de marca "A vida merece ser saboreada"
- *   - a estrutura de tamanhos P/M/G/GG com as fatias
- *   - as regras de encomenda (2 dias, sinal de 50%, retirada na loja)
- *   - o brigadeiro a R$ 225,00 o cento, mínimo de 50 unidades
+ *   - as frases de marca "A vida merece ser saboreada" e
+ *     "Cada pedaço da vida merece ser saboreado"
  *
- * QUANDO O CARDÁPIO REAL CHEGAR: troque os produtos por aqui e rode
- * `npm run db:seed` de novo. O script é idempotente (usa upsert), então
- * rodar duas vezes não duplica nada.
+ * As fotos são todas de bolos e docinhos, então só os itens de Doces têm
+ * imagem. Cafés, Salgados e Combos ficam sem foto de propósito: inventar
+ * imagem de café por IA seria pior que um card bem desenhado sem foto.
+ * Quando o cliente mandar fotos próprias, elas entram pela biblioteca de
+ * mídia do admin, nunca escritas no código.
+ *
+ * O script é idempotente (usa upsert): rodar duas vezes não duplica nada.
  */
 
 import { PrismaPg } from "@prisma/adapter-pg";
@@ -32,20 +37,297 @@ const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
-  console.log("Populando o banco com dados de demonstração...\n");
+  console.log("\nPopulando o banco com o cardápio de exemplo...\n");
 
   // ---------------------------------------------------------------------------
-  // Canais de pedido
+  // Mídia
   // ---------------------------------------------------------------------------
-  // FICTÍCIO: o número de WhatsApp é de exemplo. Trocar pelo real do cliente.
-  const whatsapp = await prisma.orderChannel.upsert({
-    where: { id: "canal-whatsapp" },
+  const midias = [
+    {
+      id: "midia-docinhos",
+      url: "/seed/docinhos.jpeg",
+      altText: "Bandeja de brigadeiros variados no balcão da confeitaria",
+      width: 630,
+      height: 1120,
+      sizeBytes: 184238,
+      usageContext: "product",
+    },
+    {
+      id: "midia-bolo-chocolate",
+      url: "/seed/bolo-chocolate.jpeg",
+      altText: "Bolo de chocolate com cerejas e lascas de chocolate meio amargo",
+      width: 4284,
+      height: 5712,
+      sizeBytes: 129819,
+      usageContext: "product",
+    },
+    {
+      id: "midia-bolo-morango",
+      url: "/seed/bolo-morango.jpeg",
+      altText: "Bolo de morango coberto com merengue maçaricado",
+      width: 2268,
+      height: 3024,
+      sizeBytes: 216144,
+      usageContext: "product",
+    },
+    {
+      id: "midia-bolo-doce-de-leite",
+      url: "/seed/bolo-doce-de-leite.jpeg",
+      altText: "Bolo de doce de leite com chocolate branco e granulado",
+      width: 2268,
+      height: 3024,
+      sizeBytes: 339354,
+      usageContext: "product",
+    },
+    {
+      id: "midia-bolo-coco",
+      url: "/seed/bolo-coco.jpeg",
+      altText: "Bolo de coco com doce de leite e fios de ovos",
+      width: 2268,
+      height: 3024,
+      sizeBytes: 281554,
+      usageContext: "product",
+    },
+    {
+      id: "midia-torta-brigadeiro",
+      url: "/seed/torta-brigadeiro.jpeg",
+      altText: "Torta de brigadeiro com doce de leite vista de cima",
+      width: 2048,
+      height: 1365,
+      sizeBytes: 186297,
+      usageContext: "hero",
+    },
+    {
+      // Esta foto aparenta ser de banco de imagens, não da loja.
+      // Serve como placeholder, mas nunca deve ser chamada de "foto da Dalami".
+      id: "midia-cheesecake",
+      url: "/seed/cheesecake.jpeg",
+      altText: "Fatia de cheesecake com calda de frutas vermelhas",
+      width: 3398,
+      height: 5096,
+      sizeBytes: 206293,
+      usageContext: "product",
+    },
+  ];
+
+  for (const m of midias) {
+    await prisma.media.upsert({ where: { id: m.id }, update: m, create: m });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Categorias
+  // ---------------------------------------------------------------------------
+  const categorias = [
+    { id: "cat-cafes", name: "Cafés", slug: "cafes", order: 0,
+      description: "Grãos moídos na hora, tirados no balcão." },
+    { id: "cat-doces", name: "Doces", slug: "doces", order: 1,
+      description: "Bolos, tortas e docinhos feitos na confeitaria." },
+    { id: "cat-salgados", name: "Salgados", slug: "salgados", order: 2,
+      description: "Assados do dia, para acompanhar o café." },
+    { id: "cat-combos", name: "Combos", slug: "combos", order: 3,
+      description: "Café e acompanhamento com preço fechado." },
+  ];
+
+  for (const c of categorias) {
+    await prisma.category.upsert({
+      where: { slug: c.slug },
+      update: {},
+      create: { ...c, active: true },
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Produtos — TODOS OS NOMES, DESCRIÇÕES E PREÇOS SÃO DE EXEMPLO
+  // ---------------------------------------------------------------------------
+  type Item = {
+    id: string;
+    categoryId: string;
+    name: string;
+    slug: string;
+    description: string;
+    price: string;
+    promoPrice?: string;
+    mediaId?: string;
+    featured?: boolean;
+    available?: boolean;
+    order: number;
+  };
+
+  const itens: Item[] = [
+    // --- Cafés -------------------------------------------------------------
+    { id: "p-espresso", categoryId: "cat-cafes", name: "Espresso", slug: "espresso",
+      description: "Curto, encorpado, tirado na hora.", price: "6.50", order: 0 },
+    { id: "p-coado", categoryId: "cat-cafes", name: "Café coado da casa", slug: "cafe-coado-da-casa",
+      description: "Coado no pano, servido em xícara grande.", price: "7.00", order: 1 },
+    { id: "p-cappuccino", categoryId: "cat-cafes", name: "Cappuccino", slug: "cappuccino",
+      description: "Espresso, leite vaporizado e canela por cima.", price: "12.00",
+      featured: true, order: 2 },
+    { id: "p-latte", categoryId: "cat-cafes", name: "Latte", slug: "latte",
+      description: "Mais leite, menos amargor. Vai bem com doce.", price: "13.00", order: 3 },
+    { id: "p-mocha", categoryId: "cat-cafes", name: "Mocha", slug: "mocha",
+      description: "Espresso com chocolate meio amargo e leite.", price: "15.00", order: 4 },
+    { id: "p-chocolate-quente", categoryId: "cat-cafes", name: "Chocolate quente", slug: "chocolate-quente",
+      description: "Chocolate derretido na hora, sem pó solúvel.", price: "14.00", order: 5 },
+
+    // --- Doces -------------------------------------------------------------
+    { id: "p-fatia-chocolate", categoryId: "cat-doces", name: "Fatia de bolo de chocolate",
+      slug: "fatia-bolo-chocolate",
+      description: "Massa úmida de chocolate com recheio cremoso e cereja.",
+      price: "14.00", mediaId: "midia-bolo-chocolate", featured: true, order: 0 },
+    { id: "p-fatia-morango", categoryId: "cat-doces", name: "Fatia de bolo de morango",
+      slug: "fatia-bolo-morango",
+      description: "Creme, morango fresco e merengue maçaricado.",
+      price: "15.00", mediaId: "midia-bolo-morango", featured: true, order: 1 },
+    { id: "p-fatia-doce-de-leite", categoryId: "cat-doces", name: "Fatia de bolo de doce de leite",
+      slug: "fatia-bolo-doce-de-leite",
+      description: "Doce de leite entre camadas de chocolate branco.",
+      price: "15.00", mediaId: "midia-bolo-doce-de-leite", order: 2 },
+    { id: "p-fatia-coco", categoryId: "cat-doces", name: "Fatia de bolo de coco",
+      slug: "fatia-bolo-coco",
+      description: "Coco queimado, doce de leite e fios de ovos.",
+      price: "16.00", mediaId: "midia-bolo-coco", order: 3 },
+    { id: "p-torta-brigadeiro", categoryId: "cat-doces", name: "Torta de brigadeiro",
+      slug: "torta-brigadeiro",
+      description: "Brigadeiro cremoso sobre base crocante.",
+      price: "16.00", promoPrice: "13.50", mediaId: "midia-torta-brigadeiro", order: 4 },
+    { id: "p-brigadeiro", categoryId: "cat-doces", name: "Brigadeiro gourmet",
+      slug: "brigadeiro-gourmet",
+      description: "Unidade. Nove sabores no balcão todo dia.",
+      price: "6.00", mediaId: "midia-docinhos", featured: true, order: 5 },
+    { id: "p-cheesecake", categoryId: "cat-doces", name: "Cheesecake",
+      slug: "cheesecake",
+      description: "Fatia com calda de frutas vermelhas.",
+      price: "18.00", mediaId: "midia-cheesecake", available: false, order: 6 },
+
+    // --- Salgados ----------------------------------------------------------
+    { id: "p-pao-de-queijo", categoryId: "cat-salgados", name: "Pão de queijo", slug: "pao-de-queijo",
+      description: "Assado de hora em hora. Servido quente.", price: "7.00", order: 0 },
+    { id: "p-coxinha", categoryId: "cat-salgados", name: "Coxinha de frango", slug: "coxinha-de-frango",
+      description: "Frango desfiado com catupiry.", price: "9.50", order: 1 },
+    { id: "p-empada", categoryId: "cat-salgados", name: "Empada de palmito", slug: "empada-de-palmito",
+      description: "Massa amanteigada, recheio cremoso.", price: "9.00", order: 2 },
+    { id: "p-croissant", categoryId: "cat-salgados", name: "Croissant de presunto e queijo",
+      slug: "croissant-presunto-queijo",
+      description: "Massa folhada feita na casa.", price: "14.00", order: 3 },
+    { id: "p-misto", categoryId: "cat-salgados", name: "Misto quente", slug: "misto-quente",
+      description: "Pão de forma na chapa, presunto e queijo.", price: "13.00", order: 4 },
+
+    // --- Combos ------------------------------------------------------------
+    { id: "p-combo-manha", categoryId: "cat-combos", name: "Café com pão de queijo",
+      slug: "combo-cafe-pao-de-queijo",
+      description: "Café coado e dois pães de queijo.",
+      price: "13.50", promoPrice: "12.00", order: 0 },
+    { id: "p-combo-tarde", categoryId: "cat-combos", name: "Cappuccino com fatia de bolo",
+      slug: "combo-cappuccino-bolo",
+      description: "Cappuccino e uma fatia do bolo do dia.",
+      price: "26.00", promoPrice: "24.00", featured: true, order: 1 },
+    { id: "p-combo-dois", categoryId: "cat-combos", name: "Café da tarde para dois",
+      slug: "combo-cafe-da-tarde-para-dois",
+      description: "Dois cafés, duas fatias de bolo e dois docinhos.",
+      price: "45.00", order: 2 },
+  ];
+
+  for (const i of itens) {
+    const { promoPrice, mediaId, featured, available, ...resto } = i;
+    await prisma.product.upsert({
+      where: { slug: i.slug },
+      update: {},
+      create: {
+        ...resto,
+        promoPrice: promoPrice ?? null,
+        mediaId: mediaId ?? null,
+        featured: featured ?? false,
+        available: available ?? true,
+      },
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Destaques (o hero animado da home)
+  // ---------------------------------------------------------------------------
+  const destaques = [
+    { id: "d-torta", productId: "p-torta-brigadeiro", order: 0 },
+    { id: "d-morango", productId: "p-fatia-morango", order: 1 },
+    { id: "d-brigadeiro", productId: "p-brigadeiro", order: 2 },
+    { id: "d-chocolate", productId: "p-fatia-chocolate", order: 3 },
+  ];
+
+  for (const d of destaques) {
+    await prisma.highlight.upsert({
+      where: { id: d.id },
+      update: {},
+      create: { id: d.id, kind: "product", productId: d.productId, order: d.order, active: true },
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Blocos da seção Sobre
+  //
+  // O lado da imagem alterna sozinho pela posição: order par = imagem à
+  // esquerda, ímpar = imagem à direita. O admin não escolhe o lado.
+  // ---------------------------------------------------------------------------
+  const blocos = [
+    {
+      key: "sobre-1",
+      title: "Cada pedaço da vida merece ser saboreado",
+      body:
+        "<p>A Dalami é uma confeitaria e cafeteria de bairro nos Ingleses. " +
+        "Fazemos bolo, docinho e salgado na nossa própria cozinha, todo dia, " +
+        "e servimos café tirado na hora no balcão.</p>",
+      mediaId: "midia-torta-brigadeiro",
+      order: 0,
+    },
+    {
+      key: "sobre-2",
+      title: "Feito aqui, servido aqui",
+      body:
+        "<p>Nada vem congelado de fora. O que está na vitrine saiu da nossa " +
+        "cozinha hoje de manhã, e é isso que muda o gosto.</p>",
+      mediaId: "midia-docinhos",
+      order: 1,
+    },
+  ];
+
+  for (const b of blocos) {
+    await prisma.contentBlock.upsert({
+      where: { key: b.key },
+      update: {},
+      create: { ...b, visible: true },
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Seções da home, na ordem definida no briefing
+  // ---------------------------------------------------------------------------
+  const secoes = [
+    "highlights",
+    "menu-cta",
+    "order-cta",
+    "about",
+    "location",
+    "hours",
+    "contact",
+  ];
+
+  for (const [i, key] of secoes.entries()) {
+    await prisma.siteSection.upsert({
+      where: { key },
+      update: {},
+      create: { key, visible: true, order: i },
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Canal de compra — PLACEHOLDER, o link real do iFood não foi informado
+  // ---------------------------------------------------------------------------
+  await prisma.orderChannel.upsert({
+    where: { id: "canal-ifood" },
     update: {},
     create: {
-      id: "canal-whatsapp",
-      name: "WhatsApp",
-      type: "whatsapp",
-      urlOrPhone: "https://wa.me/5548999999999", // FICTÍCIO
+      id: "canal-ifood",
+      name: "iFood",
+      type: "ifood",
+      urlOrPhone: "https://www.ifood.com.br/", // PLACEHOLDER
       order: 0,
       active: true,
     },
@@ -67,263 +349,32 @@ async function main() {
   });
 
   // ---------------------------------------------------------------------------
-  // Mídia (fotos reais do PDF do cliente)
+  // Seção "Fazer encomenda" — PLACEHOLDER, número real não informado
   // ---------------------------------------------------------------------------
-  const midias = [
-    {
-      id: "midia-hero",
-      url: "/seed/hero-brigadeiro.jpeg",
-      altText: "Bolo de brigadeiro com cobertura de doce de leite e fita dourada da Dalami",
-      width: 2048,
-      height: 1365,
-      sizeBytes: 186297,
-      usageContext: "hero",
-    },
-    {
-      id: "midia-chocolate",
-      url: "/seed/bolo-chocolate-cereja.jpeg",
-      altText: "Bolo de chocolate com cerejas no topo e lascas de chocolate ao redor",
-      width: 4284,
-      height: 5712,
-      sizeBytes: 129819,
-      usageContext: "product",
-    },
-    {
-      id: "midia-morango",
-      url: "/seed/bolo-morango-merengue.jpeg",
-      altText: "Bolo de morango com merengue maçaricado e medalhão dourado da Dalami",
-      width: 2268,
-      height: 3024,
-      sizeBytes: 216144,
-      usageContext: "product",
-    },
-    {
-      id: "midia-doce-de-leite",
-      url: "/seed/bolo-doce-de-leite.jpeg",
-      altText: "Bolo de doce de leite com chocolate branco e laço dourado da Dalami",
-      width: 2268,
-      height: 3024,
-      sizeBytes: 339354,
-      usageContext: "product",
-    },
-  ];
-
-  for (const midia of midias) {
-    await prisma.media.upsert({ where: { id: midia.id }, update: midia, create: midia });
-  }
-
-  // ---------------------------------------------------------------------------
-  // Categorias
-  // ---------------------------------------------------------------------------
-  // As regras de encomenda abaixo são REAIS, vieram do briefing do cliente.
-  const bolos = await prisma.category.upsert({
-    where: { slug: "bolos" },
+  await prisma.orderSection.upsert({
+    where: { id: "singleton" },
     update: {},
     create: {
-      id: "cat-bolos",
-      name: "Bolos inteiros",
-      slug: "bolos",
-      description: "Bolos artesanais feitos por encomenda, montados no dia da retirada.",
-      order: 0,
-      active: true,
-      unitType: "unidade",
-      orderingNote:
-        "<p>Pedidos com no mínimo <strong>2 dias de antecedência</strong>. " +
-        "O pedido é confirmado com o pagamento de <strong>50% do valor</strong>. " +
-        "A retirada é agendada na loja. Não fazemos decoração personalizada.</p>",
-      preferredOrderChannelId: whatsapp.id,
-    },
-  });
-
-  const brigadeiros = await prisma.category.upsert({
-    where: { slug: "brigadeiros" },
-    update: {},
-    create: {
-      id: "cat-brigadeiros",
-      name: "Brigadeiros",
-      slug: "brigadeiros",
-      description: "Vendidos por cento, com sabores escolhidos na hora do pedido.",
-      order: 1,
-      active: true,
-      unitType: "cento",
-      orderingNote:
-        "<p>Pedido mínimo de <strong>50 unidades</strong>. " +
-        "Você escolhe até <strong>4 sabores por cento</strong> " +
-        "(ou 2 sabores no meio cento). A escolha dos sabores acontece na conversa do WhatsApp.</p>",
-      preferredOrderChannelId: whatsapp.id,
-    },
-  });
-
-  // ---------------------------------------------------------------------------
-  // Produtos — TODOS OS NOMES, DESCRIÇÕES E PREÇOS DE BOLO SÃO FICTÍCIOS
-  // ---------------------------------------------------------------------------
-  // As informações de fatias por tamanho são REAIS (vieram do briefing).
-  const TAMANHOS = [
-    { label: "P", servingsInfo: "17 cm, 10 a 12 fatias" },
-    { label: "M", servingsInfo: "20 cm, 22 a 25 fatias" },
-    { label: "G", servingsInfo: "25 cm, 40 a 45 fatias" },
-    { label: "GG", servingsInfo: "30 x 20 cm, 65 a 70 fatias" },
-  ];
-
-  const produtos = [
-    {
-      id: "prod-chocolate-cereja",
-      name: "Chocolate com Cereja", // FICTÍCIO
-      slug: "chocolate-com-cereja",
+      id: "singleton",
+      title: "Fazer encomenda",
       description:
-        "Massa de chocolate, recheio cremeiro e cerejas no topo, fechado com lascas de chocolate meio amargo.", // FICTÍCIO
-      mediaId: "midia-chocolate",
-      featured: true,
-      order: 0,
-      precos: ["89.00", "149.00", "239.00", "329.00"], // FICTÍCIO
-    },
-    {
-      id: "prod-morango-merengue",
-      name: "Morango com Merengue", // FICTÍCIO
-      slug: "morango-com-merengue",
-      description:
-        "Camadas de creme e morango fresco, cobertas com merengue maçaricado na hora.", // FICTÍCIO
-      mediaId: "midia-morango",
-      featured: true,
-      order: 1,
-      precos: ["95.00", "159.00", "249.00", "339.00"], // FICTÍCIO
-    },
-    {
-      id: "prod-doce-de-leite",
-      name: "Doce de Leite com Chocolate", // FICTÍCIO
-      slug: "doce-de-leite-com-chocolate",
-      description:
-        "Doce de leite cremoso entre camadas de chocolate, com chocolate branco e granulado belga.", // FICTÍCIO
-      mediaId: "midia-doce-de-leite",
-      featured: false,
-      order: 2,
-      precos: ["92.00", "155.00", "245.00", "335.00"], // FICTÍCIO
-    },
-  ];
-
-  for (const p of produtos) {
-    await prisma.product.upsert({
-      where: { slug: p.slug },
-      update: {},
-      create: {
-        id: p.id,
-        categoryId: bolos.id,
-        name: p.name,
-        slug: p.slug,
-        description: p.description,
-        mediaId: p.mediaId,
-        featured: p.featured,
-        available: true,
-        order: p.order,
-        variants: {
-          create: TAMANHOS.map((t, i) => ({
-            label: t.label,
-            price: p.precos[i],
-            servingsInfo: t.servingsInfo,
-            order: i,
-          })),
-        },
-      },
-    });
-  }
-
-  // Brigadeiro: o preço do cento é REAL (R$ 225,00, do briefing).
-  // O preço do MEIO CENTO não foi informado pelo cliente e NÃO deve ser inventado.
-  await prisma.product.upsert({
-    where: { slug: "brigadeiros-gourmet" },
-    update: {},
-    create: {
-      id: "prod-brigadeiros",
-      categoryId: brigadeiros.id,
-      name: "Brigadeiros gourmet",
-      slug: "brigadeiros-gourmet",
-      description:
-        "Nove sabores disponíveis. Você escolhe até quatro por cento na hora do pedido.",
-      featured: false,
-      available: true,
-      order: 0,
-      variants: {
-        create: [
-          {
-            label: "Cento (100 un)",
-            price: "225.00", // REAL
-            servingsInfo: "100 unidades, pedido mínimo de 50",
-            order: 0,
-          },
-        ],
-      },
-    },
-  });
-
-  // ---------------------------------------------------------------------------
-  // Blocos de conteúdo
-  // ---------------------------------------------------------------------------
-  await prisma.contentBlock.upsert({
-    where: { key: "sobre" },
-    update: {},
-    create: {
-      key: "sobre",
-      title: "Cada pedaço da vida merece ser saboreado", // REAL (assinatura da marca)
-      // FICTÍCIO: texto de exemplo até o cliente enviar o texto institucional dele.
-      body:
-        "<p>A Dalami nasceu da vontade de fazer bolo do jeito antigo, com tempo e " +
-        "com as mãos. Cada encomenda é montada no dia da retirada, para chegar " +
-        "na sua mesa do jeito que saiu da nossa bancada.</p>",
-      mediaId: "midia-hero",
-      order: 0,
-      visible: true,
-    },
-  });
-
-  // ---------------------------------------------------------------------------
-  // Seções da home (controlam o que aparece e em que ordem)
-  // ---------------------------------------------------------------------------
-  const secoes = ["highlights", "about", "menu-cta", "contact", "hours"];
-  for (const [i, key] of secoes.entries()) {
-    await prisma.siteSection.upsert({
-      where: { key },
-      update: {},
-      create: { key, visible: true, order: i },
-    });
-  }
-
-  // ---------------------------------------------------------------------------
-  // Destaques
-  // ---------------------------------------------------------------------------
-  await prisma.highlight.upsert({
-    where: { id: "destaque-chocolate" },
-    update: {},
-    create: {
-      id: "destaque-chocolate",
-      kind: "product",
-      productId: "prod-chocolate-cereja",
-      order: 0,
-      active: true,
-    },
-  });
-
-  await prisma.highlight.upsert({
-    where: { id: "destaque-morango" },
-    update: {},
-    create: {
-      id: "destaque-morango",
-      kind: "product",
-      productId: "prod-morango-merengue",
-      order: 1,
+        "<p>Quer um bolo para uma data especial, ou docinhos para uma festa? " +
+        "Fale com a gente no WhatsApp e a gente monta o pedido junto com você.</p>",
+      whatsappNumber: "5548999999999", // PLACEHOLDER
       active: true,
     },
   });
 
   // ---------------------------------------------------------------------------
-  // Horários — FICTÍCIO: horário de exemplo até o cliente informar o real.
+  // Horários — PLACEHOLDER, o horário real não foi informado
   // ---------------------------------------------------------------------------
   const horarios = [
-    { dayOfWeek: 0, closed: false, opensAt: "08:00", closesAt: "18:00" }, // domingo
-    { dayOfWeek: 1, closed: true, opensAt: null, closesAt: null }, // segunda, fechado
-    { dayOfWeek: 2, closed: false, opensAt: "08:00", closesAt: "18:00" },
-    { dayOfWeek: 3, closed: false, opensAt: "08:00", closesAt: "18:00" },
-    { dayOfWeek: 4, closed: false, opensAt: "08:00", closesAt: "18:00" },
-    { dayOfWeek: 5, closed: false, opensAt: "08:00", closesAt: "18:00" },
+    { dayOfWeek: 0, closed: false, opensAt: "08:00", closesAt: "13:00" }, // domingo
+    { dayOfWeek: 1, closed: true, opensAt: null, closesAt: null }, // segunda
+    { dayOfWeek: 2, closed: false, opensAt: "08:00", closesAt: "19:00" },
+    { dayOfWeek: 3, closed: false, opensAt: "08:00", closesAt: "19:00" },
+    { dayOfWeek: 4, closed: false, opensAt: "08:00", closesAt: "19:00" },
+    { dayOfWeek: 5, closed: false, opensAt: "08:00", closesAt: "19:00" },
     { dayOfWeek: 6, closed: false, opensAt: "08:00", closesAt: "18:00" },
   ];
 
@@ -336,7 +387,7 @@ async function main() {
   }
 
   // ---------------------------------------------------------------------------
-  // Configurações do site (singleton)
+  // Configurações do site
   // ---------------------------------------------------------------------------
   await prisma.siteSettings.upsert({
     where: { id: "singleton" },
@@ -344,19 +395,22 @@ async function main() {
     create: {
       id: "singleton",
       siteName: "Dalami Confeitaria e Cafeteria",
-      seoTitle: "Dalami Confeitaria e Cafeteria | Bolos artesanais nos Ingleses",
+      seoTitle: "Dalami Confeitaria e Cafeteria | Ingleses, Florianópolis",
       seoDescription:
-        "Bolos artesanais feitos por encomenda no bairro Ingleses, em Florianópolis. A vida merece ser saboreada.",
-      seoImageMediaId: "midia-hero",
-      footerText: "A vida merece ser saboreada.", // REAL (assinatura da marca)
+        "Confeitaria e cafeteria no bairro Ingleses, em Florianópolis. Bolos, docinhos, salgados e café tirado na hora.",
+      seoImageMediaId: "midia-torta-brigadeiro",
+      footerText: "A vida merece ser saboreada.", // REAL
+      locationRegion: "Bairro Ingleses, Florianópolis - SC", // PLACEHOLDER
+      locationNote: "Venha nos visitar. O café está sempre saindo.", // PLACEHOLDER
     },
   });
 
+  const total = await prisma.product.count();
   console.log("Pronto.\n");
-  console.log("  4 imagens, 2 categorias, 4 produtos, 13 variantes de preço");
-  console.log("  2 destaques, 1 bloco de texto, 5 seções, 7 dias de horário\n");
-  console.log("  LEMBRETE: nomes, preços de bolo, telefone e horário são FICTÍCIOS.");
-  console.log("  Só as fotos, o Instagram e o brigadeiro a R$ 225,00 o cento são reais.\n");
+  console.log(`  ${midias.length} imagens, ${categorias.length} categorias, ${total} itens`);
+  console.log(`  ${destaques.length} destaques, ${blocos.length} blocos de Sobre, ${secoes.length} seções\n`);
+  console.log("  LEMBRETE: o cardápio inteiro é de EXEMPLO. Telefone, iFood,");
+  console.log("  horário e endereço também. Trocar quando o cliente enviar os dados.\n");
 }
 
 main()

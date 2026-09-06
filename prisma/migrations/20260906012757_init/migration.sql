@@ -24,9 +24,6 @@ CREATE TABLE "Category" (
     "mediaId" TEXT,
     "order" INTEGER NOT NULL DEFAULT 0,
     "active" BOOLEAN NOT NULL DEFAULT true,
-    "unitType" TEXT NOT NULL DEFAULT 'unidade',
-    "orderingNote" TEXT,
-    "preferredOrderChannelId" TEXT,
 
     CONSTRAINT "Category_pkey" PRIMARY KEY ("id")
 );
@@ -38,6 +35,10 @@ CREATE TABLE "Product" (
     "name" TEXT NOT NULL,
     "slug" TEXT NOT NULL,
     "description" TEXT,
+    "price" DECIMAL(10,2) NOT NULL,
+    "promoPrice" DECIMAL(10,2),
+    "promoStartsAt" TIMESTAMP(3),
+    "promoEndsAt" TIMESTAMP(3),
     "mediaId" TEXT,
     "featured" BOOLEAN NOT NULL DEFAULT false,
     "available" BOOLEAN NOT NULL DEFAULT true,
@@ -46,21 +47,6 @@ CREATE TABLE "Product" (
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "Product_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "ProductVariant" (
-    "id" TEXT NOT NULL,
-    "productId" TEXT NOT NULL,
-    "label" TEXT NOT NULL,
-    "price" DECIMAL(10,2) NOT NULL,
-    "promoPrice" DECIMAL(10,2),
-    "promoStartsAt" TIMESTAMP(3),
-    "promoEndsAt" TIMESTAMP(3),
-    "servingsInfo" TEXT,
-    "order" INTEGER NOT NULL DEFAULT 0,
-
-    CONSTRAINT "ProductVariant_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -104,6 +90,17 @@ CREATE TABLE "SiteSection" (
 );
 
 -- CreateTable
+CREATE TABLE "OrderSection" (
+    "id" TEXT NOT NULL DEFAULT 'singleton',
+    "title" TEXT NOT NULL DEFAULT 'Fazer encomenda',
+    "description" TEXT,
+    "whatsappNumber" TEXT,
+    "active" BOOLEAN NOT NULL DEFAULT true,
+
+    CONSTRAINT "OrderSection_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "SiteSettings" (
     "id" TEXT NOT NULL DEFAULT 'singleton',
     "siteName" TEXT NOT NULL DEFAULT 'Dalami Confeitaria e Cafeteria',
@@ -113,6 +110,8 @@ CREATE TABLE "SiteSettings" (
     "seoDescription" TEXT,
     "seoImageMediaId" TEXT,
     "footerText" TEXT,
+    "locationRegion" TEXT,
+    "locationNote" TEXT,
 
     CONSTRAINT "SiteSettings_pkey" PRIMARY KEY ("id")
 );
@@ -194,12 +193,6 @@ CREATE INDEX "Product_featured_idx" ON "Product"("featured");
 CREATE INDEX "Product_available_idx" ON "Product"("available");
 
 -- CreateIndex
-CREATE INDEX "ProductVariant_productId_order_idx" ON "ProductVariant"("productId", "order");
-
--- CreateIndex
-CREATE UNIQUE INDEX "ProductVariant_productId_label_key" ON "ProductVariant"("productId", "label");
-
--- CreateIndex
 CREATE INDEX "Highlight_order_idx" ON "Highlight"("order");
 
 -- CreateIndex
@@ -245,16 +238,10 @@ CREATE INDEX "SpecialHours_date_idx" ON "SpecialHours"("date");
 ALTER TABLE "Category" ADD CONSTRAINT "Category_mediaId_fkey" FOREIGN KEY ("mediaId") REFERENCES "Media"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Category" ADD CONSTRAINT "Category_preferredOrderChannelId_fkey" FOREIGN KEY ("preferredOrderChannelId") REFERENCES "OrderChannel"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE "Product" ADD CONSTRAINT "Product_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "Category"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Product" ADD CONSTRAINT "Product_mediaId_fkey" FOREIGN KEY ("mediaId") REFERENCES "Media"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "ProductVariant" ADD CONSTRAINT "ProductVariant_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Highlight" ADD CONSTRAINT "Highlight_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE CASCADE ON UPDATE CASCADE;

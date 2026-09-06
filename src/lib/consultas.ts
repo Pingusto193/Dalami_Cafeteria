@@ -1,44 +1,36 @@
 import { prisma } from "@/lib/prisma";
+import type {
+  CategoriaView,
+  DestaqueView,
+  ImagemView,
+} from "@/lib/formato";
+
+export type {
+  CategoriaView,
+  DestaqueView,
+  ImagemView,
+  ProdutoView,
+} from "@/lib/formato";
+export { formatarPreco } from "@/lib/formato";
 
 /**
  * Consultas do site público.
  *
- * Regra que atravessa este arquivo: `price` é Decimal no banco e Decimal não
+ * Regra que atravessa este arquivo: `price` é Decimal no banco, e Decimal não
  * atravessa a fronteira servidor/cliente do React. Todo preço sai daqui já
- * como número, convertido num lugar só.
+ * convertido para número, num lugar só.
  */
 
-export type VarianteView = {
-  id: string;
-  label: string;
-  preco: number;
-  precoPromo: number | null;
-  porcao: string | null;
-};
+function imagem(m: {
+  url: string;
+  altText: string;
+  width: number;
+  height: number;
+} | null): ImagemView | null {
+  return m ? { url: m.url, alt: m.altText, largura: m.width, altura: m.height } : null;
+}
 
-export type ProdutoView = {
-  id: string;
-  nome: string;
-  slug: string;
-  descricao: string | null;
-  destaque: boolean;
-  disponivel: boolean;
-  imagem: { url: string; alt: string; largura: number; altura: number } | null;
-  variantes: VarianteView[];
-};
-
-export type CategoriaView = {
-  id: string;
-  nome: string;
-  slug: string;
-  descricao: string | null;
-  unidade: string;
-  regras: string | null;
-  canal: { nome: string; url: string } | null;
-  produtos: ProdutoView[];
-};
-
-/** Uma promoção só vale se o preço existir e a data de hoje estiver na janela. */
+/** Uma promoção só vale se o preço existir e hoje estiver dentro da janela. */
 function promoAtiva(
   promoPrice: unknown,
   inicio: Date | null,
@@ -58,13 +50,9 @@ export async function buscarCardapio(): Promise<CategoriaView[]> {
     where: { active: true },
     orderBy: { order: "asc" },
     include: {
-      preferredOrderChannel: true,
       products: {
         orderBy: { order: "asc" },
-        include: {
-          media: true,
-          variants: { orderBy: { order: "asc" } },
-        },
+        include: { media: true },
       },
     },
   });
@@ -74,36 +62,23 @@ export async function buscarCardapio(): Promise<CategoriaView[]> {
     nome: c.name,
     slug: c.slug,
     descricao: c.description,
-    unidade: c.unitType,
-    regras: c.orderingNote,
-    canal:
-      c.preferredOrderChannel && c.preferredOrderChannel.active
-        ? { nome: c.preferredOrderChannel.name, url: c.preferredOrderChannel.urlOrPhone }
-        : null,
     produtos: c.products.map((p) => ({
       id: p.id,
       nome: p.name,
       slug: p.slug,
       descricao: p.description,
+      preco: Number(p.price),
+      precoPromo: promoAtiva(p.promoPrice, p.promoStartsAt, p.promoEndsAt, agora)
+        ? Number(p.promoPrice)
+        : null,
       destaque: p.featured,
       disponivel: p.available,
-      imagem: p.media
-        ? { url: p.media.url, alt: p.media.altText, largura: p.media.width, altura: p.media.height }
-        : null,
-      variantes: p.variants.map((v) => ({
-        id: v.id,
-        label: v.label,
-        preco: Number(v.price),
-        precoPromo: promoAtiva(v.promoPrice, v.promoStartsAt, v.promoEndsAt, agora)
-          ? Number(v.promoPrice)
-          : null,
-        porcao: v.servingsInfo,
-      })),
+      imagem: imagem(p.media),
     })),
   }));
 }
 
-export async function buscarDestaques() {
+export async function buscarDestaques(): Promise<DestaqueView[]> {
   const agora = new Date();
 
   const destaques = await prisma.highlight.findMany({
@@ -115,54 +90,59 @@ export async function buscarDestaques() {
       ],
     },
     orderBy: { order: "asc" },
-    include: {
-      media: true,
-      product: { include: { media: true, variants: { orderBy: { order: "asc" } } } },
-    },
+    include: { media: true, product: { include: { media: true } } },
   });
 
   return destaques
+    // Um destaque que aponta para produto indisponível sai da vitrine.
     .filter((d) => d.kind !== "product" || (d.product && d.product.available))
     .map((d) => ({
       id: d.id,
-      tipo: d.kind,
       titulo: d.customTitle ?? d.product?.name ?? null,
       texto: d.customText ?? d.product?.description ?? null,
       link: d.customLinkUrl,
       slug: d.product?.slug ?? null,
-      imagem: (d.product?.media ?? d.media)
-        ? {
-            url: (d.product?.media ?? d.media)!.url,
-            alt: (d.product?.media ?? d.media)!.altText,
-            largura: (d.product?.media ?? d.media)!.width,
-            altura: (d.product?.media ?? d.media)!.height,
-          }
-        : null,
-      menorPreco: d.product?.variants.length
-        ? Math.min(...d.product.variants.map((v) => Number(v.price)))
-        : null,
+      imagem: imagem(d.product?.media ?? d.media),
+      preco: d.product ? Number(d.product.price) : null,
+      precoPromo:
+        d.product && promoAtiva(d.product.promoPrice, d.product.promoStartsAt, d.product.promoEndsAt, agora)
+          ? Number(d.product.promoPrice)
+          : null,
     }));
 }
 
-export async function buscarConteudo(chave: string) {
-  const bloco = await prisma.contentBlock.findUnique({
-    where: { key: chave },
+/**
+ * Blocos da seção Sobre, já ordenados.
+ *
+ * O índice na lista é o que decide o lado da imagem no layout alternado.
+ * O admin controla a ordem, nunca a lateralidade.
+ */
+export async function buscarBlocosSobre() {
+  const blocos = await prisma.contentBlock.findMany({
+    where: { visible: true },
+    orderBy: { order: "asc" },
     include: { media: true },
   });
 
-  if (!bloco || !bloco.visible) return null;
+  return blocos.map((b) => ({
+    id: b.id,
+    titulo: b.title,
+    corpo: b.body,
+    imagem: imagem(b.media),
+  }));
+}
+
+export async function buscarEncomenda() {
+  const secao = await prisma.orderSection.findUnique({ where: { id: "singleton" } });
+  if (!secao || !secao.active) return null;
+
+  // Monta o link do WhatsApp a partir do número puro guardado no banco.
+  const numero = secao.whatsappNumber?.replace(/\D/g, "") ?? "";
 
   return {
-    titulo: bloco.title,
-    corpo: bloco.body,
-    imagem: bloco.media
-      ? {
-          url: bloco.media.url,
-          alt: bloco.media.altText,
-          largura: bloco.media.width,
-          altura: bloco.media.height,
-        }
-      : null,
+    titulo: secao.title,
+    descricao: secao.description,
+    whatsapp: numero ? `https://wa.me/${numero}` : null,
   };
 }
 
@@ -196,14 +176,12 @@ export async function buscarRodape() {
   };
 }
 
-export function formatarPreco(valor: number) {
-  return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-}
-
-export const secoesVisiveis = async () => {
+/** Quais seções da home estão visíveis, já na ordem que o admin definiu. */
+export async function buscarSecoes() {
   const secoes = await prisma.siteSection.findMany({
     where: { visible: true },
     orderBy: { order: "asc" },
   });
   return secoes.map((s) => s.key);
-};
+}
+

@@ -1,9 +1,9 @@
 // Schema do site + painel administrativo da Dalami Confeitaria e Cafeteria.
 //
 // Princípio central: o admin edita CONTEÚDO dentro de campos pré-definidos.
-// Não existe campo de HTML livre nem de posicionamento arbitrário — por isso
-// SiteSection controla o que aparece na home e em que ordem, em vez de deixar
-// o admin montar a página.
+// Não existe campo de HTML livre nem de posicionamento arbitrário. SiteSection
+// controla quais seções aparecem na home e em que ordem, mas o layout interno
+// de cada seção é fixo no código.
 
 generator client {
   provider = "prisma-client"
@@ -18,14 +18,14 @@ datasource db {
 // MÍDIA
 // ============================================================================
 
-/// Guarda SOMENTE metadados. O arquivo binário nunca entra no Postgres — ele
-/// vive no storage (disco local em dev; Cloudinary/S3/R2 em produção).
-/// `sizeBytes` é o tamanho do arquivo JÁ OTIMIZADO, não o do original enviado:
-/// serve como sinal de saúde da pipeline de compressão.
+/// Guarda SOMENTE metadados. O arquivo binário nunca entra no Postgres: ele
+/// vive no serviço de imagem externo (Cloudinary). `sizeBytes` é o tamanho do
+/// arquivo JÁ OTIMIZADO, não o do original enviado, e serve como sinal de
+/// saúde da pipeline de compressão.
 model Media {
   id           String   @id @default(cuid())
   url          String
-  /// Texto alternativo — obrigatório por acessibilidade.
+  /// Texto alternativo, obrigatório por acessibilidade.
   altText      String
   width        Int
   height       Int
@@ -58,73 +58,45 @@ model Category {
   mediaId     String?
   order       Int     @default(0)
   active      Boolean @default(true)
-  /// "unidade" para bolos; "cento" para a linha de brigadeiros.
-  unitType    String  @default("unidade")
-  /// Regras de encomenda exibidas na categoria (texto rico sanitizado no servidor).
-  /// Ex.: "Pedidos com 2 dias de antecedência, sinal de 50%, retirada na loja."
-  orderingNote String?
 
-  /// Permite que uma categoria de encomenda aponte para o WhatsApp enquanto
-  /// outra (ex.: consumo imediato) aponte para o iFood. Se nulo, o site usa o
-  /// canal padrão. Nada de hardcode de "só existe WhatsApp".
-  preferredOrderChannelId String?
-
-  media                 Media?        @relation(fields: [mediaId], references: [id], onDelete: SetNull)
-  preferredOrderChannel OrderChannel? @relation(fields: [preferredOrderChannelId], references: [id], onDelete: SetNull)
-  products              Product[]
+  media    Media?    @relation(fields: [mediaId], references: [id], onDelete: SetNull)
+  products Product[]
 
   @@index([order])
   @@index([active])
 }
 
-/// Não tem campo de preço: todo produto tem 1+ ProductVariant, mesmo quando é
-/// de tamanho único (nesse caso, uma variante rotulada "Único").
+/// Modelo padrão de cardápio de cafeteria: um item, um preço.
+/// Sem variantes de tamanho: essa ideia veio de um material de bolos por
+/// encomenda que NÃO representa o cardápio real desta casa.
 model Product {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   categoryId  String
   name        String
-  slug        String   @unique
+  slug        String    @unique
   description String?
+  /// Decimal, nunca Float: preço em dinheiro não pode sofrer erro de ponto flutuante.
+  price       Decimal   @db.Decimal(10, 2)
+  promoPrice  Decimal?  @db.Decimal(10, 2)
+  promoStartsAt DateTime?
+  promoEndsAt   DateTime?
   mediaId     String?
-  featured    Boolean  @default(false)
-  available   Boolean  @default(true)
-  order       Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  featured    Boolean   @default(false)
+  /// Cobre também o caso "não disponível hoje".
+  available   Boolean   @default(true)
+  order       Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   /// Restrict: apagar uma categoria que ainda tem produtos deve FALHAR com uma
   /// mensagem clara no admin, nunca apagar os produtos em silêncio.
-  category   Category         @relation(fields: [categoryId], references: [id], onDelete: Restrict)
-  media      Media?           @relation(fields: [mediaId], references: [id], onDelete: SetNull)
-  variants   ProductVariant[]
+  category   Category    @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  media      Media?      @relation(fields: [mediaId], references: [id], onDelete: SetNull)
   highlights Highlight[]
 
   @@index([categoryId, order])
   @@index([featured])
   @@index([available])
-}
-
-/// Os tamanhos reais do cardápio: P (17cm, 10-12 fatias), M (20cm, 22-25),
-/// G (25cm, 40-45), GG (30x20cm quadrado, 65-70). Cheesecake usa "Único".
-model ProductVariant {
-  id            String    @id @default(cuid())
-  productId     String
-  /// "P" | "M" | "G" | "GG" | "Único" — rótulo livre, não é enum, porque o
-  /// cardápio real pode ganhar outros formatos (ex.: "Meio cento").
-  label         String
-  /// Decimal, nunca Float: preço em dinheiro não pode sofrer erro de ponto flutuante.
-  price         Decimal   @db.Decimal(10, 2)
-  promoPrice    Decimal?  @db.Decimal(10, 2)
-  promoStartsAt DateTime?
-  promoEndsAt   DateTime?
-  /// Ex.: "10 a 12 fatias"
-  servingsInfo  String?
-  order         Int       @default(0)
-
-  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-
-  @@unique([productId, label])
-  @@index([productId, order])
 }
 
 // ============================================================================
@@ -137,9 +109,9 @@ enum HighlightKind {
   custom_content
 }
 
-/// Um destaque aponta para um Product OU carrega conteúdo próprio — NUNCA os
-/// dois. A regra é garantida em três camadas: enum `kind`, refine do Zod no
-/// servidor, e um CHECK constraint adicionado na migração.
+/// Um destaque aponta para um Product OU carrega conteúdo próprio, NUNCA os
+/// dois. A regra é garantida em três camadas: o enum `kind`, um refine do Zod
+/// no servidor, e um CHECK constraint no banco.
 model Highlight {
   id            String        @id @default(cuid())
   kind          HighlightKind
@@ -160,9 +132,15 @@ model Highlight {
   @@index([active])
 }
 
-/// Blocos institucionais editáveis (ex.: "about-hero"). `body` é texto rico
-/// LIMITADO (negrito, itálico, listas, links) e sanitizado NO SERVIDOR antes
-/// de salvar — nunca HTML bruto vindo do cliente.
+/// Blocos da seção "Sobre". O admin pode adicionar quantos quiser.
+///
+/// O LADO da imagem não é editável: ele sai da posição do bloco na lista
+/// (`order` par = imagem à esquerda, ímpar = imagem à direita). É o mesmo
+/// princípio do resto do admin, liberdade de conteúdo dentro de limites que
+/// não deixam o layout quebrar.
+///
+/// `body` é texto rico LIMITADO (negrito, itálico, listas, links) e sanitizado
+/// NO SERVIDOR antes de salvar, nunca HTML bruto vindo do cliente.
 model ContentBlock {
   id      String  @id @default(cuid())
   key     String  @unique
@@ -178,8 +156,10 @@ model ContentBlock {
 }
 
 /// Controla QUAIS seções aparecem na home e em QUE ORDEM.
-/// Chaves: "highlights" | "about" | "menu-cta" | "contact" | "hours".
-/// É o mecanismo que dá liberdade ao admin sem risco de quebrar o layout.
+/// Chaves: "highlights" | "menu-cta" | "order-cta" | "about" | "location" |
+///         "hours" | "contact"
+/// O admin liga, desliga e reordena. O layout interno de cada seção é fixo no
+/// código, então não há como quebrar a página.
 model SiteSection {
   id      String  @id @default(cuid())
   key     String  @unique
@@ -187,6 +167,23 @@ model SiteSection {
   order   Int     @default(0)
 
   @@index([order])
+}
+
+// ============================================================================
+// ENCOMENDA
+// ============================================================================
+
+/// Singleton da seção "Fazer encomenda".
+///
+/// Nesta etapa é só texto + botão de WhatsApp. A seleção de quais itens do
+/// cardápio ficam disponíveis para encomenda virá depois, numa tabela
+/// OrderSectionItem (productId, order) que NÃO deve ser criada agora.
+model OrderSection {
+  id             String  @id @default("singleton")
+  title          String  @default("Fazer encomenda")
+  description    String?
+  whatsappNumber String?
+  active         Boolean @default(true)
 }
 
 // ============================================================================
@@ -203,13 +200,17 @@ model SiteSettings {
   seoDescription  String?
   seoImageMediaId String?
   footerText      String?
+  /// Ex.: "Bairro Ingleses, Florianópolis - SC"
+  locationRegion  String?
+  /// Ex.: "Venha nos visitar!"
+  locationNote    String?
 
   logoMedia     Media? @relation("SettingsLogo", fields: [logoMediaId], references: [id], onDelete: SetNull)
   faviconMedia  Media? @relation("SettingsFavicon", fields: [faviconMediaId], references: [id], onDelete: SetNull)
   seoImageMedia Media? @relation("SettingsSeo", fields: [seoImageMediaId], references: [id], onDelete: SetNull)
 }
 
-/// Lista aberta — sem colunas fixas por rede social.
+/// Lista aberta, sem colunas fixas por rede social.
 model SocialLink {
   id       String  @id @default(cuid())
   platform String
@@ -222,8 +223,9 @@ model SocialLink {
   @@index([active])
 }
 
-/// Lista aberta de canais de pedido (WhatsApp, iFood, ...). O site nunca faz
-/// checkout próprio: o botão "Encomendar" leva para o canal externo.
+/// Canal de compra mostrado no cardápio, por exemplo o botão "Comprar no iFood".
+/// Lista aberta para permitir outros canais no futuro. O site nunca faz
+/// checkout próprio.
 model OrderChannel {
   id         String  @id @default(cuid())
   name       String
@@ -233,8 +235,6 @@ model OrderChannel {
   order      Int     @default(0)
   active     Boolean @default(true)
 
-  categories Category[]
-
   @@index([order])
   @@index([active])
 }
@@ -243,12 +243,12 @@ model OrderChannel {
 // HORÁRIOS
 // ============================================================================
 
-/// Horário semanal. `periodOrder` permite mais de um período no mesmo dia
-/// (ex.: 08:00-12:00 e 14:00-18:00).
+/// Horário semanal. `periodOrder` permite mais de um período no mesmo dia,
+/// por exemplo 08:00-12:00 e 14:00-18:00.
 ///
 /// opensAt/closesAt são String "HH:MM" de propósito: um tipo Time do Postgres
-/// carregaria semântica de timezone e o cálculo de "ABERTO agora" precisa ser
-/// feito no fuso America/Sao_Paulo, não no fuso do servidor.
+/// carregaria semântica de fuso, e o cálculo de "aberto agora" precisa rodar em
+/// America/Sao_Paulo, não no fuso do servidor (o Render roda em UTC).
 model BusinessHours {
   id          String  @id @default(cuid())
   /// 0 = domingo ... 6 = sábado

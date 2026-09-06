@@ -160,9 +160,12 @@ export function FitaDourada({ className = "" }: { className?: string }) {
 export function StatusHorario({
   periodos,
   excecoes,
+  claro = false,
 }: {
   periodos: Periodo[];
   excecoes: Excecao[];
+  /** Use sobre fundo escuro (a seção de Localização é verde oliva cheia). */
+  claro?: boolean;
 }) {
   const [estado, setEstado] = useState<ReturnType<typeof estadoDaLoja> | null>(null);
 
@@ -173,30 +176,35 @@ export function StatusHorario({
     return () => clearInterval(id);
   }, [periodos, excecoes]);
 
+  // Antes da hidratação não dá para saber a hora do visitante, então mostramos
+  // um rótulo neutro em vez de arriscar um "aberto" errado por um instante.
   if (!estado) {
     return (
-      <span className="font-rotulo text-xs tracking-widest text-tinta-tenue uppercase">
+      <span
+        className={`font-rotulo text-xs uppercase tracking-widest ${
+          claro ? "text-creme/60" : "text-tinta-tenue"
+        }`}
+      >
         Ver horários
       </span>
     );
   }
 
+  const corAberto = claro ? "var(--color-dourado-claro)" : "var(--color-oliva)";
+  const corFechado = claro ? "#e2a98a" : "var(--color-terracota)";
+  const cor = estado.aberto ? corAberto : corFechado;
+
   return (
-    <span className="inline-flex items-baseline gap-2">
-      <span
-        className="font-rotulo text-xs uppercase tracking-widest"
-        style={{ color: estado.aberto ? "var(--color-oliva)" : "var(--color-terracota)" }}
-      >
+    <span className="inline-flex flex-wrap items-baseline gap-x-2 gap-y-1">
+      <span className="font-rotulo text-xs uppercase tracking-widest" style={{ color: cor }}>
         <span
           aria-hidden="true"
           className="mr-2 inline-block size-2 rounded-full align-middle"
-          style={{
-            backgroundColor: estado.aberto ? "var(--color-oliva)" : "var(--color-terracota)",
-          }}
+          style={{ backgroundColor: cor }}
         />
         {estado.aberto ? "Aberto agora" : "Fechado agora"}
       </span>
-      <span className="text-sm text-tinta-suave">
+      <span className={`text-sm ${claro ? "text-creme/75" : "text-tinta-suave"}`}>
         {estado.aberto
           ? `até ${estado.fechaAs}`
           : estado.motivo

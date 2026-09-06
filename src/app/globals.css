@@ -137,6 +137,29 @@ h3 {
 }
 
 /* ===========================================================================
+   KEN BURNS
+
+   Zoom lento e contínuo com leve panorâmica na imagem do destaque em exibição.
+   Só transform, então roda no compositor e não força layout.
+
+   A animação só existe no slide ativo: aplicá-la nos slides escondidos
+   gastaria bateria animando pixels que ninguém vê.
+   =========================================================================== */
+
+.kenburns {
+  animation: kenburns 22s var(--ease-suave) infinite alternate;
+}
+
+@keyframes kenburns {
+  from {
+    transform: scale(1.02) translate3d(-0.8%, 0.4%, 0);
+  }
+  to {
+    transform: scale(1.12) translate3d(0.8%, -0.6%, 0);
+  }
+}
+
+/* ===========================================================================
    ENTRADAS
 
    IntersectionObserver acrescenta .dentro no contêiner. Os estados inicial e
