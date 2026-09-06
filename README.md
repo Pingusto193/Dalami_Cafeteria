@@ -47,27 +47,12 @@ Preencha no `.env` local. Em produção, cadastre as mesmas no painel do Render.
 | `NEXT_PUBLIC_SITE_URL` | URL pública, usada no sitemap e nas tags Open Graph |
 | `CLOUDINARY_*` | credenciais do serviço de imagem |
 
-## Aviso importante sobre o banco no Render
+## Publicar no ar
 
-O PostgreSQL gratuito do Render **expira 30 dias após a criação**, com mais 14 dias de tolerância
-antes de ser apagado de vez, e **não tem backup automático** no plano gratuito.
-
-- **Data de criação do banco no Render:** _(anotar aqui no dia em que o banco for criado)_
-- **Fazer o backup até:** _(data de criação + 25 dias)_
-
-Comando de backup manual, rodado da sua máquina:
-
-```bash
-pg_dump "<DATABASE_URL externa do Render>" --no-owner --no-privileges -F c -f backup-dalami.dump
-```
-
-Para restaurar:
-
-```bash
-pg_restore --no-owner --no-privileges -d "<DATABASE_URL de destino>" backup-dalami.dump
-```
-
-Se o cliente fechar contrato, **migre para o plano pago antes desse prazo vencer**.
+O passo a passo do deploy no Render está em [DEPLOY.md](DEPLOY.md), junto com
+dois avisos que importam: as fotos enviadas pelo painel somem a cada atualização
+do site enquanto não houver um serviço de imagens, e o banco gratuito do Render
+expira em 30 dias sem backup automático.
 
 ## Estrutura
 
