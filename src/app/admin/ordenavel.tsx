@@ -124,15 +124,22 @@ function ItemArrastavel({ id, children }: { id: string; children: React.ReactNod
     <li
       ref={setNodeRef}
       style={{
-        transform: CSS.Transform.toString(transform),
+        // O leve aumento enquanto arrasta é o que faz parecer que o item foi
+        // levantado da pilha, em vez de só escorregar por baixo dela.
+        transform: CSS.Transform.toString(
+          transform ? { ...transform, scaleX: isDragging ? 1.015 : 1, scaleY: isDragging ? 1.015 : 1 } : null,
+        ),
         transition,
-        // Enquanto arrasta, o item sobe acima dos vizinhos e ganha sombra,
-        // para parecer que foi levantado da pilha em vez de escorregar por
-        // baixo dela.
         zIndex: isDragging ? 30 : undefined,
-        opacity: isDragging ? 0.92 : 1,
+
+        // `drop-shadow` e não `box-shadow`: o <li> é retangular, e uma sombra
+        // de caixa desenharia um quadrado de pontas vivas em volta do cartão
+        // arredondado que mora dentro dele. O drop-shadow segue o formato do
+        // que foi realmente pintado, então acompanha qualquer arredondamento
+        // sem precisar saber qual é.
+        filter: isDragging ? "drop-shadow(0 14px 22px rgba(66, 59, 53, 0.22))" : undefined,
       }}
-      className={isDragging ? "relative shadow-xl shadow-cacau/15" : "relative"}
+      className="relative"
     >
       <div className="flex items-stretch gap-2">
         {/* A alça é o único ponto que arrasta. Se a linha inteira arrastasse,
