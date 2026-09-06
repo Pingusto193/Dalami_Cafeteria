@@ -82,6 +82,22 @@ export function precoParaBanco(valor: FormDataEntryValue | null): string | null 
   return numero.toFixed(2);
 }
 
+/**
+ * Tira as tags para o texto voltar ao campo de edição como o dono escreveu.
+ *
+ * Ele digita em texto simples, com linha em branco separando parágrafos, e é
+ * assim que precisa reencontrar o texto ao editar de novo. Mostrar o HTML
+ * seria devolver para ele um problema que o painel existe para esconder.
+ */
+export function paraTextoSimples(html: string | null): string {
+  if (!html) return "";
+  return html
+    .replace(/<\/p>\s*<p>/gi, "\n\n")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<[^>]+>/g, "")
+    .trim();
+}
+
 export function texto(valor: FormDataEntryValue | null): string {
   return String(valor ?? "").trim();
 }
