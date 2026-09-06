@@ -8,18 +8,6 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-const SECOES = [
-  { href: "/admin", rotulo: "Início" },
-  { href: "/admin/cardapio", rotulo: "Cardápio" },
-  { href: "/admin/destaques", rotulo: "Destaques" },
-  { href: "/admin/encomenda", rotulo: "Encomenda" },
-  { href: "/admin/sobre", rotulo: "Sobre" },
-  { href: "/admin/horario", rotulo: "Horário" },
-  { href: "/admin/contato", rotulo: "Contato" },
-  { href: "/admin/site", rotulo: "Dados do site" },
-  { href: "/admin/imagens", rotulo: "Imagens" },
-];
-
 export default async function LayoutAdmin({
   children,
 }: {
@@ -60,21 +48,6 @@ export default async function LayoutAdmin({
             </form>
           </div>
         </div>
-
-        <nav
-          aria-label="Seções do painel"
-          className="mx-auto flex max-w-6xl gap-1 overflow-x-auto px-4 pb-2"
-        >
-          {SECOES.map((s) => (
-            <Link
-              key={s.href}
-              href={s.href}
-              className="shrink-0 rounded-full px-3.5 py-1.5 text-sm text-tinta-suave transition-colors hover:bg-cacau/6 hover:text-cacau"
-            >
-              {s.rotulo}
-            </Link>
-          ))}
-        </nav>
       </header>
 
       <main className="mx-auto max-w-6xl px-5 py-10">{children}</main>

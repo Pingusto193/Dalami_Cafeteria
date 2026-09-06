@@ -322,6 +322,21 @@ h3 {
   animation-delay: 0.18s;
 }
 
+/* Variante do painel: mesmo efeito, mais curto.
+   O JS espera 420ms antes de navegar, então a cortina precisa fechar dentro
+   desse tempo (0,30s de animação + 0,10s do último atraso = 0,40s). Se a
+   animação fosse mais lenta que a espera, a página trocaria com os quadros
+   ainda subindo, que é exatamente o problema que esta cortina resolve. */
+.transicao-rapida > span {
+  animation-duration: 0.3s;
+}
+.transicao-rapida > span:nth-child(2) {
+  animation-delay: 0.05s;
+}
+.transicao-rapida > span:nth-child(3) {
+  animation-delay: 0.1s;
+}
+
 /* ===========================================================================
    BARRA DE PROGRESSO DO CARROSSEL
 

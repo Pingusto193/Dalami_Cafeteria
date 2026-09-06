@@ -19,9 +19,21 @@ import { usePathname, useRouter } from "next/navigation";
  * o caminho normal do navegador e a troca é instantânea.
  */
 
-/** Duração da animação (0,55s) mais o atraso do último quadro (0,18s). */
+/**
+ * Duração da animação mais o atraso do último quadro.
+ *
+ * O painel usa tempos mais curtos de propósito: no site a cortina é vitrine,
+ * mas quem está no painel está trabalhando, e meia dúvida de segundo a cada
+ * clique vira espera acumulada ao longo do dia.
+ */
 const DUR_COBRE = 750;
 const DUR_REVELA = 750;
+const DUR_COBRE_PAINEL = 420;
+const DUR_REVELA_PAINEL = 420;
+
+function noPainel(caminho: string) {
+  return caminho.startsWith("/admin");
+}
 
 /** Se a rota não mudar nesse tempo, revela mesmo assim em vez de travar. */
 const SOCORRO = 2500;
@@ -64,11 +76,6 @@ export function TransicaoDePagina() {
       // e cobrir a tela para descer duas seções seria exagero.
       if (url.pathname === window.location.pathname) return;
 
-      // O painel não recebe transição. Lá a pessoa está trabalhando, e meio
-      // segundo de cortina a cada clique vira atraso, não charme.
-      if (url.pathname.startsWith("/admin")) return;
-      if (window.location.pathname.startsWith("/admin")) return;
-
       if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
       // stopPropagation junto com preventDefault: o <Link> do Next tem o
@@ -95,7 +102,7 @@ export function TransicaoDePagina() {
 
     const irPara = setTimeout(() => {
       if (destino.current) router.push(destino.current);
-    }, DUR_COBRE);
+    }, noPainel(caminho) ? DUR_COBRE_PAINEL : DUR_COBRE);
 
     // Se a rota não mudar (link para a mesma página, erro de navegação), sai
     // da cortina em vez de deixar a tela coberta para sempre.
@@ -103,7 +110,7 @@ export function TransicaoDePagina() {
       if (navegando.current) {
         navegando.current = false;
         setFase("revelando");
-        setTimeout(() => setFase("oculto"), DUR_REVELA);
+        setTimeout(() => setFase("oculto"), noPainel(caminho) ? DUR_REVELA_PAINEL : DUR_REVELA);
       }
     }, SOCORRO);
 
@@ -119,7 +126,7 @@ export function TransicaoDePagina() {
     navegando.current = false;
 
     setFase("revelando");
-    const id = setTimeout(() => setFase("oculto"), DUR_REVELA);
+    const id = setTimeout(() => setFase("oculto"), noPainel(caminho) ? DUR_REVELA_PAINEL : DUR_REVELA);
     return () => clearTimeout(id);
   }, [caminho]);
 
@@ -130,7 +137,7 @@ export function TransicaoDePagina() {
       // A chave muda entre as fases, então o React monta um nó novo e a
       // animação da fase seguinte começa do zero em vez de ser ignorada.
       key={fase}
-      className={`transicao transicao-${fase}`}
+      className={`transicao transicao-${fase} ${noPainel(caminho) ? "transicao-rapida" : ""}`}
       aria-hidden="true"
     >
       <span />

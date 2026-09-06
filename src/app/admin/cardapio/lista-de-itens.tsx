@@ -1,0 +1,92 @@
+"use client";
+
+import Image from "next/image";
+import Link from "next/link";
+import { useActionState } from "react";
+import { ListaOrdenavel } from "../ordenavel";
+import { reordenar } from "../acoes-ordem";
+import { alternarDisponivel } from "./acoes";
+
+export type ItemDaLista = {
+  id: string;
+  nome: string;
+  preco: string;
+  precoPromo: string | null;
+  disponivel: boolean;
+  destaque: boolean;
+  imagemUrl: string | null;
+};
+
+export function ListaDeItens({ itens }: { itens: ItemDaLista[] }) {
+  const [, alternar] = useActionState(alternarDisponivel, null);
+
+  return (
+    <ListaOrdenavel
+      itens={itens}
+      aoReordenar={(ids) => reordenar("product", ids)}
+      className="space-y-2"
+    >
+      {(p) => (
+        <div
+          className={`flex items-center gap-3 rounded-xl border border-tinta/10 bg-creme-alto p-3 ${
+            p.disponivel ? "" : "opacity-60"
+          }`}
+        >
+          <div className="relative size-12 shrink-0 overflow-hidden rounded-lg bg-creme">
+            {p.imagemUrl ? (
+              <Image src={p.imagemUrl} alt="" fill sizes="48px" className="object-cover" />
+            ) : (
+              <span className="grid size-full place-items-center text-[0.55rem] text-tinta-tenue">
+                sem foto
+              </span>
+            )}
+          </div>
+
+          <div className="min-w-0 flex-1">
+            <p className="flex flex-wrap items-center gap-2 font-medium text-cacau">
+              {p.nome}
+              {p.destaque && (
+                <span className="rounded-full bg-oliva px-2 py-0.5 text-[0.55rem] text-creme-alto">
+                  destaque
+                </span>
+              )}
+            </p>
+            <p className="text-xs text-tinta-suave">
+              {p.precoPromo ? (
+                <>
+                  <s className="text-tinta-tenue">{p.preco}</s>{" "}
+                  <span className="font-medium text-terracota">{p.precoPromo}</span>
+                </>
+              ) : (
+                p.preco
+              )}
+            </p>
+          </div>
+
+          {/* Ligar e desligar sem abrir o item: é a mudança mais comum do dia a
+              dia, tipo "acabou a coxinha". */}
+          <form action={alternar}>
+            <input type="hidden" name="id" value={p.id} />
+            <button
+              type="submit"
+              className={`btn rounded-full px-3 py-1.5 text-[0.65rem] font-medium transition-colors ${
+                p.disponivel
+                  ? "bg-oliva/12 text-oliva-escuro hover:bg-oliva/20"
+                  : "bg-terracota/12 text-terracota hover:bg-terracota/20"
+              }`}
+            >
+              {p.disponivel ? "Tem hoje" : "Não tem hoje"}
+            </button>
+          </form>
+
+          <Link
+            href={`/admin/cardapio/${p.id}`}
+            className="btn rounded-full px-4 py-2 text-xs text-tinta-suave transition-colors hover:text-cacau"
+          >
+            Editar
+          </Link>
+        </div>
+      )}
+    </ListaOrdenavel>
+  );
+}

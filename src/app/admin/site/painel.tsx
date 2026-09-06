@@ -7,11 +7,12 @@ import {
   Campo,
   Cartao,
   EscolherImagem,
-  Ordem,
   Salvar,
   type ImagemDisponivel,
 } from "../componentes";
-import { alternarSecao, moverSecao, salvarSite } from "../acoes-conteudo";
+import { ListaOrdenavel } from "../ordenavel";
+import { reordenar } from "../acoes-ordem";
+import { alternarSecao, salvarSite } from "../acoes-conteudo";
 
 type Dados = {
   nome: string;
@@ -44,7 +45,6 @@ export function PainelSite({
 }) {
   const [salvo, acaoSalvar] = useActionState(salvarSite, null);
   const [alternado, acaoAlternar] = useActionState(alternarSecao, null);
-  const [, acaoMover] = useActionState(moverSecao, null);
 
   return (
     <div className="max-w-3xl space-y-6">
@@ -141,43 +141,45 @@ export function PainelSite({
           Seções da página inicial
         </h2>
         <p className="mt-1 text-sm text-tinta-suave">
-          Ligue, desligue e mude a ordem das partes da página. O desenho de cada
-          seção é fixo, então não tem como bagunçar o site por aqui.
+          Ligue, desligue e arraste pela alça para mudar a ordem das partes da
+          página. O desenho de cada seção é fixo, então não tem como bagunçar o
+          site por aqui.
         </p>
 
         <Aviso resultado={alternado} />
 
-        <ul className="mt-5 divide-y divide-tinta/8">
-          {secoes.map((s, i) => (
-            <li key={s.id} className="flex items-center gap-3 py-3">
-              <form action={acaoMover}>
-                <input type="hidden" name="id" value={s.id} />
-                <Ordem primeiro={i === 0} ultimo={i === secoes.length - 1} />
-              </form>
+        <div className="mt-5">
+          <ListaOrdenavel
+            itens={secoes}
+            aoReordenar={(ids) => reordenar("siteSection", ids)}
+            className="space-y-2"
+          >
+            {(sec) => (
+              <div className="flex items-center gap-3 rounded-xl border border-tinta/10 bg-creme-alto p-3">
+                <div className="min-w-0 flex-1">
+                  <p className={`font-medium ${sec.visivel ? "text-cacau" : "text-tinta-tenue"}`}>
+                    {sec.nome}
+                  </p>
+                  <p className="text-xs text-tinta-tenue">{sec.explica}</p>
+                </div>
 
-              <div className="min-w-0 flex-1">
-                <p className={`font-medium ${s.visivel ? "text-cacau" : "text-tinta-tenue"}`}>
-                  {s.nome}
-                </p>
-                <p className="text-xs text-tinta-tenue">{s.explica}</p>
+                <form action={acaoAlternar}>
+                  <input type="hidden" name="chave" value={sec.chave} />
+                  <button
+                    type="submit"
+                    className={`btn rounded-full px-3.5 py-1.5 text-[0.65rem] font-medium transition-colors ${
+                      sec.visivel
+                        ? "bg-oliva/12 text-oliva-escuro hover:bg-oliva/20"
+                        : "bg-tinta/10 text-tinta-suave hover:bg-tinta/16"
+                    }`}
+                  >
+                    {sec.visivel ? "Aparece" : "Escondida"}
+                  </button>
+                </form>
               </div>
-
-              <form action={acaoAlternar}>
-                <input type="hidden" name="chave" value={s.chave} />
-                <button
-                  type="submit"
-                  className={`btn rounded-full px-3.5 py-1.5 text-[0.65rem] font-medium transition-colors ${
-                    s.visivel
-                      ? "bg-oliva/12 text-oliva-escuro hover:bg-oliva/20"
-                      : "bg-tinta/10 text-tinta-suave hover:bg-tinta/16"
-                  }`}
-                >
-                  {s.visivel ? "Aparece" : "Escondida"}
-                </button>
-              </form>
-            </li>
-          ))}
-        </ul>
+            )}
+          </ListaOrdenavel>
+        </div>
       </Cartao>
     </div>
   );

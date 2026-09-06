@@ -11,8 +11,6 @@ import {
   textoOuNulo,
   type Resultado,
 } from "@/lib/admin";
-import { exigirAdmin } from "@/lib/auth";
-import { revalidarSite } from "@/lib/admin";
 
 /* --------------------------------------------------------------------------
    Categorias
@@ -59,15 +57,6 @@ export async function apagarCategoria(
     }
     await prisma.category.delete({ where: { id } });
   }, "Categoria apagada.");
-}
-
-export async function moverCategoria(
-  _anterior: Resultado | null,
-  dados: FormData,
-): Promise<Resultado> {
-  return acaoDoAdmin(async () => {
-    await trocarDeLugar("category", texto(dados.get("id")), texto(dados.get("direcao")));
-  }, "Ordem alterada.");
 }
 
 /* --------------------------------------------------------------------------
@@ -128,15 +117,6 @@ export async function apagarProduto(
   return resultado;
 }
 
-export async function moverProduto(
-  _anterior: Resultado | null,
-  dados: FormData,
-): Promise<Resultado> {
-  return acaoDoAdmin(async () => {
-    await trocarDeLugar("product", texto(dados.get("id")), texto(dados.get("direcao")));
-  }, "Ordem alterada.");
-}
-
 /** Liga e desliga a disponibilidade direto da lista, sem abrir o item. */
 export async function alternarDisponivel(
   _anterior: Resultado | null,
@@ -167,56 +147,4 @@ async function apelidoLivre(nome: string): Promise<string> {
     tentativa = `${base}-${i}`;
   }
   return `${base}-${Date.now()}`;
-}
-
-/**
- * Troca a posição de dois vizinhos na lista.
- *
- * Trocar os dois valores de `order` entre si, em vez de reindexar tudo, mantém
- * a operação pequena e não mexe em quem não precisa mudar.
- */
-async function trocarDeLugar(
-  tabela: "category" | "product",
-  id: string,
-  direcao: string,
-) {
-  const modelo = tabela === "category" ? prisma.category : prisma.product;
-
-  const atual = await (modelo as typeof prisma.category).findUnique({ where: { id } });
-  if (!atual) throw new Error("Item não encontrado.");
-
-  const paraCima = direcao === "subir";
-
-  // Produtos são ordenados dentro da própria categoria.
-  const escopo =
-    tabela === "product" && "categoryId" in atual
-      ? { categoryId: (atual as { categoryId: string }).categoryId }
-      : {};
-
-  const vizinho = await (modelo as typeof prisma.category).findFirst({
-    where: {
-      ...escopo,
-      order: paraCima ? { lt: atual.order } : { gt: atual.order },
-    },
-    orderBy: { order: paraCima ? "desc" : "asc" },
-  });
-
-  if (!vizinho) return; // já está na ponta
-
-  await prisma.$transaction([
-    (modelo as typeof prisma.category).update({
-      where: { id: atual.id },
-      data: { order: vizinho.order },
-    }),
-    (modelo as typeof prisma.category).update({
-      where: { id: vizinho.id },
-      data: { order: atual.order },
-    }),
-  ]);
-}
-
-/** Usada pela tela de item nova, que não passa por acaoDoAdmin. */
-export async function garantirAdmin() {
-  await exigirAdmin();
-  revalidarSite();
 }

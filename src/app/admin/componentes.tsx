@@ -192,49 +192,6 @@ export function Excluir({ rotulo = "Apagar" }: { rotulo?: string }) {
   );
 }
 
-/**
- * Setas de subir e descer.
- *
- * Arrastar e soltar seria mais bonito, mas pesa muito mais e é bem pior no
- * celular e no teclado. Duas setas resolvem o mesmo problema.
- */
-export function Ordem({
-  primeiro,
-  ultimo,
-}: {
-  primeiro: boolean;
-  ultimo: boolean;
-}) {
-  return (
-    <span className="flex flex-col">
-      <button
-        type="submit"
-        name="direcao"
-        value="subir"
-        disabled={primeiro}
-        aria-label="Mover para cima"
-        className="btn grid size-6 place-items-center rounded text-tinta-tenue transition-colors hover:text-cacau disabled:opacity-25"
-      >
-        <svg viewBox="0 0 24 24" className="size-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
-          <path d="M5 15l7-7 7 7" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      </button>
-      <button
-        type="submit"
-        name="direcao"
-        value="descer"
-        disabled={ultimo}
-        aria-label="Mover para baixo"
-        className="btn grid size-6 place-items-center rounded text-tinta-tenue transition-colors hover:text-cacau disabled:opacity-25"
-      >
-        <svg viewBox="0 0 24 24" className="size-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
-          <path d="M19 9l-7 7-7-7" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      </button>
-    </span>
-  );
-}
-
 export function Aviso({ resultado }: { resultado: Resultado | null }) {
   if (!resultado || !resultado.mensagem) return null;
 

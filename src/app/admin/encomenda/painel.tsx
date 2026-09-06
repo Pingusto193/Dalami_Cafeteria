@@ -9,16 +9,16 @@ import {
   Cartao,
   Excluir,
   Interruptor,
-  Ordem,
   Salvar,
   Selecao,
 } from "../componentes";
 import {
   adicionarItemEncomenda,
-  moverItemEncomenda,
   removerItemEncomenda,
   salvarEncomenda,
 } from "../acoes-conteudo";
+import { ListaOrdenavel } from "../ordenavel";
+import { reordenar } from "../acoes-ordem";
 
 type Item = {
   id: string;
@@ -41,7 +41,6 @@ export function PainelEncomenda({
   const [salvo, acaoSalvar] = useActionState(salvarEncomenda, null);
   const [adicionado, acaoAdicionar] = useActionState(adicionarItemEncomenda, null);
   const [removido, acaoRemover] = useActionState(removerItemEncomenda, null);
-  const [, acaoMover] = useActionState(moverItemEncomenda, null);
 
   return (
     <div className="max-w-3xl space-y-6">
@@ -84,8 +83,9 @@ export function PainelEncomenda({
           Cardápio de encomenda
         </h2>
         <p className="mt-1.5 text-sm text-tinta-suave">
-          Só o que estiver nesta lista aparece na página de encomenda. Para criar um item
-          novo, use a tela de Cardápio e depois adicione ele aqui.
+          Só o que estiver nesta lista aparece na página de encomenda. Arraste pela
+          alça para mudar a ordem. Para criar um item novo, use a tela de Cardápio e
+          depois adicione ele aqui.
         </p>
 
         <Aviso resultado={adicionado} />
@@ -105,44 +105,44 @@ export function PainelEncomenda({
             A lista está vazia. A página de encomenda vai mostrar só o texto e o botão.
           </p>
         ) : (
-          <ul className="mt-5 space-y-2">
-            {itens.map((it, i) => (
-              <li
-                key={it.id}
-                className={`flex items-center gap-3 rounded-xl border border-tinta/10 p-3 ${
-                  it.disponivel ? "" : "opacity-60"
-                }`}
-              >
-                <form action={acaoMover}>
-                  <input type="hidden" name="id" value={it.id} />
-                  <Ordem primeiro={i === 0} ultimo={i === itens.length - 1} />
-                </form>
+          <div className="mt-5">
+            <ListaOrdenavel
+              itens={itens}
+              aoReordenar={(ids) => reordenar("orderSectionItem", ids)}
+              className="space-y-2"
+            >
+              {(it) => (
+                <div
+                  className={`flex items-center gap-3 rounded-xl border border-tinta/10 bg-creme-alto p-3 ${
+                    it.disponivel ? "" : "opacity-60"
+                  }`}
+                >
+                  <div className="relative size-12 shrink-0 overflow-hidden rounded-lg bg-creme">
+                    {it.imagem ? (
+                      <Image src={it.imagem} alt="" fill sizes="48px" className="object-cover" />
+                    ) : (
+                      <span className="grid size-full place-items-center text-[0.55rem] text-tinta-tenue">
+                        sem foto
+                      </span>
+                    )}
+                  </div>
 
-                <div className="relative size-12 shrink-0 overflow-hidden rounded-lg bg-creme">
-                  {it.imagem ? (
-                    <Image src={it.imagem} alt="" fill sizes="48px" className="object-cover" />
-                  ) : (
-                    <span className="grid size-full place-items-center text-[0.55rem] text-tinta-tenue">
-                      sem foto
-                    </span>
-                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-cacau">{it.nome}</p>
+                    <p className="text-xs text-tinta-tenue">
+                      {it.categoria} · {it.preco}
+                      {!it.disponivel && " · marcado como indisponível, não aparece no site"}
+                    </p>
+                  </div>
+
+                  <form action={acaoRemover}>
+                    <input type="hidden" name="id" value={it.id} />
+                    <Excluir rotulo="Tirar da lista" />
+                  </form>
                 </div>
-
-                <div className="min-w-0 flex-1">
-                  <p className="font-medium text-cacau">{it.nome}</p>
-                  <p className="text-xs text-tinta-tenue">
-                    {it.categoria} · {it.preco}
-                    {!it.disponivel && " · marcado como indisponível, não aparece no site"}
-                  </p>
-                </div>
-
-                <form action={acaoRemover}>
-                  <input type="hidden" name="id" value={it.id} />
-                  <Excluir rotulo="Tirar da lista" />
-                </form>
-              </li>
-            ))}
-          </ul>
+              )}
+            </ListaOrdenavel>
+          </div>
         )}
       </Cartao>
     </div>

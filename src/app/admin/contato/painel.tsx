@@ -3,6 +3,8 @@
 import { useActionState, useState } from "react";
 import { Aviso, Campo, Cartao, Excluir, Interruptor, Salvar } from "../componentes";
 import { apagarCanal, apagarRede, salvarCanal, salvarRede } from "../acoes-conteudo";
+import { ListaOrdenavel } from "../ordenavel";
+import { reordenar } from "../acoes-ordem";
 
 type Link = { id: string; nome: string; url: string; ativa: boolean };
 
@@ -20,6 +22,7 @@ function Lista({
   dicaUrl,
   salvar,
   apagar,
+  tabela,
 }: {
   titulo: string;
   apoio: string;
@@ -30,6 +33,7 @@ function Lista({
   dicaUrl: string;
   salvar: typeof salvarRede;
   apagar: typeof apagarRede;
+  tabela: "socialLink" | "orderChannel";
 }) {
   const [editando, setEditando] = useState<string | null>(null);
   const [criando, setCriando] = useState(false);
@@ -93,43 +97,49 @@ function Lista({
       {itens.length === 0 && !criando ? (
         <p className="mt-5 text-sm text-tinta-tenue">Nenhum link cadastrado ainda.</p>
       ) : (
-        <ul className="mt-5 divide-y divide-tinta/8">
-          {itens.map((it) => (
-            <li key={it.id} className="py-3">
-              {editando === it.id ? (
-                <Formulario item={it} />
-              ) : (
-                <div className="flex items-center gap-3">
-                  <div className="min-w-0 flex-1">
-                    <p className="flex flex-wrap items-center gap-2 font-medium text-cacau">
-                      {it.nome}
-                      {!it.ativa && (
-                        <span className="rounded-full bg-tinta/10 px-2 py-0.5 text-[0.6rem] text-tinta-suave">
-                          escondido
-                        </span>
-                      )}
-                    </p>
-                    <p className="truncate text-xs text-tinta-tenue">{it.url}</p>
+        <div className="mt-5">
+          <ListaOrdenavel
+            itens={itens}
+            aoReordenar={(ids) => reordenar(tabela, ids)}
+            className="space-y-2"
+          >
+            {(it) => (
+              <>
+                {editando === it.id ? (
+                  <Formulario item={it} />
+                ) : (
+                  <div className="flex items-center gap-3 rounded-xl border border-tinta/10 bg-creme-alto p-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="flex flex-wrap items-center gap-2 font-medium text-cacau">
+                        {it.nome}
+                        {!it.ativa && (
+                          <span className="rounded-full bg-tinta/10 px-2 py-0.5 text-[0.6rem] text-tinta-suave">
+                            escondido
+                          </span>
+                        )}
+                      </p>
+                      <p className="truncate text-xs text-tinta-tenue">{it.url}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditando(it.id);
+                        setCriando(false);
+                      }}
+                      className="btn rounded-full px-4 py-2 text-xs text-tinta-suave transition-colors hover:text-cacau"
+                    >
+                      Editar
+                    </button>
+                    <form action={acaoApagar}>
+                      <input type="hidden" name="id" value={it.id} />
+                      <Excluir />
+                    </form>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEditando(it.id);
-                      setCriando(false);
-                    }}
-                    className="btn rounded-full px-4 py-2 text-xs text-tinta-suave transition-colors hover:text-cacau"
-                  >
-                    Editar
-                  </button>
-                  <form action={acaoApagar}>
-                    <input type="hidden" name="id" value={it.id} />
-                    <Excluir />
-                  </form>
-                </div>
-              )}
-            </li>
-          ))}
-        </ul>
+                )}
+              </>
+            )}
+          </ListaOrdenavel>
+        </div>
       )}
     </Cartao>
   );
@@ -140,7 +150,7 @@ export function PainelContato({ redes, canais }: { redes: Link[]; canais: Link[]
     <div className="max-w-3xl space-y-6">
       <Lista
         titulo="Canais de compra"
-        apoio="O botão que aparece no topo do site e no cardápio."
+        apoio="O botão que aparece no topo do site e no cardápio. Arraste pela alça para reordenar."
         itens={canais}
         campoAtivo="ativo"
         rotuloNome="Nome do canal"
@@ -148,11 +158,12 @@ export function PainelContato({ redes, canais }: { redes: Link[]; canais: Link[]
         dicaUrl="Cole o link da sua loja, por exemplo o endereço do iFood."
         salvar={salvarCanal}
         apagar={apagarCanal}
+        tabela="orderChannel"
       />
 
       <Lista
         titulo="Redes sociais"
-        apoio="Aparecem na seção de contato da página inicial."
+        apoio="Aparecem na seção de contato da página inicial. Arraste pela alça para reordenar."
         itens={redes}
         campoAtivo="ativa"
         rotuloNome="Nome da rede"
@@ -160,6 +171,7 @@ export function PainelContato({ redes, canais }: { redes: Link[]; canais: Link[]
         dicaUrl="Cole o link completo do seu perfil."
         salvar={salvarRede}
         apagar={apagarRede}
+        tabela="socialLink"
       />
     </div>
   );

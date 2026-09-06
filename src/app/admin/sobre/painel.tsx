@@ -9,11 +9,12 @@ import {
   EscolherImagem,
   Excluir,
   Interruptor,
-  Ordem,
   Salvar,
   type ImagemDisponivel,
 } from "../componentes";
-import { apagarBloco, moverBloco, salvarBloco } from "../acoes-conteudo";
+import { ListaOrdenavel } from "../ordenavel";
+import { reordenar } from "../acoes-ordem";
+import { apagarBloco, salvarBloco } from "../acoes-conteudo";
 
 type Bloco = {
   id: string;
@@ -95,11 +96,13 @@ export function PainelSobre({
   const [editando, setEditando] = useState<string | null>(null);
   const [criando, setCriando] = useState(false);
   const [apagado, acaoApagar] = useActionState(apagarBloco, null);
-  const [, acaoMover] = useActionState(moverBloco, null);
 
   return (
     <div className="max-w-3xl space-y-5">
-      <div className="flex justify-end">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-tinta-suave">
+          Arraste pela alça para mudar a ordem. O lado da foto acompanha a posição.
+        </p>
         {!criando && (
           <button
             type="button"
@@ -122,67 +125,68 @@ export function PainelSobre({
         </Cartao>
       )}
 
-      {blocos.length === 0 && !criando && (
+      {blocos.length === 0 && !criando ? (
         <Cartao>
           <p className="text-sm text-tinta-tenue">
             Nenhum bloco ainda. Sem blocos, a seção Sobre não aparece no site.
           </p>
         </Cartao>
-      )}
+      ) : (
+        <ListaOrdenavel
+          itens={blocos}
+          aoReordenar={(ids) => reordenar("contentBlock", ids)}
+          className="space-y-5"
+        >
+          {(b, i) => (
+            <Cartao>
+              {editando === b.id ? (
+                <Formulario
+                  bloco={b}
+                  imagens={imagens}
+                  posicao={i}
+                  aoFechar={() => setEditando(null)}
+                />
+              ) : (
+                <div className="flex items-start gap-4">
+                  <div className="min-w-0 flex-1">
+                    <p className="flex flex-wrap items-center gap-2 font-display text-lg font-semibold text-cacau">
+                      {b.titulo || "(sem título)"}
+                      {!b.visivel && (
+                        <span className="rounded-full bg-tinta/10 px-2 py-0.5 font-rotulo text-[0.55rem] tracking-wider text-tinta-suave">
+                          escondido
+                        </span>
+                      )}
+                    </p>
+                    <p className="mt-1 line-clamp-2 text-sm text-tinta-suave">
+                      {b.corpo || "(sem texto)"}
+                    </p>
+                    <p className="mt-2 font-rotulo text-[0.55rem] uppercase tracking-[0.16em] text-terracota">
+                      Foto à {i % 2 === 0 ? "esquerda" : "direita"}
+                    </p>
+                  </div>
 
-      {blocos.map((b, i) => (
-        <Cartao key={b.id}>
-          {editando === b.id ? (
-            <Formulario
-              bloco={b}
-              imagens={imagens}
-              posicao={i}
-              aoFechar={() => setEditando(null)}
-            />
-          ) : (
-            <div className="flex items-start gap-4">
-              <form action={acaoMover} className="pt-1">
-                <input type="hidden" name="id" value={b.id} />
-                <Ordem primeiro={i === 0} ultimo={i === blocos.length - 1} />
-              </form>
-
-              <div className="min-w-0 flex-1">
-                <p className="flex flex-wrap items-center gap-2 font-display text-lg font-semibold text-cacau">
-                  {b.titulo || "(sem título)"}
-                  {!b.visivel && (
-                    <span className="rounded-full bg-tinta/10 px-2 py-0.5 font-rotulo text-[0.55rem] tracking-wider text-tinta-suave">
-                      escondido
-                    </span>
-                  )}
-                </p>
-                <p className="mt-1 line-clamp-2 text-sm text-tinta-suave">
-                  {b.corpo || "(sem texto)"}
-                </p>
-                <p className="mt-2 font-rotulo text-[0.55rem] uppercase tracking-[0.16em] text-terracota">
-                  Foto à {i % 2 === 0 ? "esquerda" : "direita"}
-                </p>
-              </div>
-
-              <div className="flex shrink-0 items-center gap-1">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEditando(b.id);
-                    setCriando(false);
-                  }}
-                  className="btn rounded-full px-4 py-2 text-xs text-tinta-suave transition-colors hover:text-cacau"
-                >
-                  Editar
-                </button>
-                <form action={acaoApagar}>
-                  <input type="hidden" name="id" value={b.id} />
-                  <Excluir />
-                </form>
-              </div>
-            </div>
+                  <div className="flex shrink-0 items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditando(b.id);
+                        setCriando(false);
+                      }}
+                      className="btn rounded-full px-4 py-2 text-xs text-tinta-suave transition-colors hover:text-cacau"
+                    >
+                      Editar
+                    </button>
+                    <form action={acaoApagar}>
+                      <input type="hidden" name="id" value={b.id} />
+                      <Excluir />
+                    </form>
+                  </div>
+                </div>
+              )}
+            </Cartao>
           )}
-        </Cartao>
-      ))}
+        </ListaOrdenavel>
+      )}
     </div>
   );
 }

@@ -110,15 +110,6 @@ export async function apagarDestaque(
   }, "Destaque removido.");
 }
 
-export async function moverDestaque(
-  _a: Resultado | null,
-  dados: FormData,
-): Promise<Resultado> {
-  return acaoDoAdmin(async () => {
-    await trocarOrdem("highlight", texto(dados.get("id")), texto(dados.get("direcao")));
-  }, "Ordem alterada.");
-}
-
 /* ==========================================================================
    ENCOMENDA
    ========================================================================== */
@@ -181,15 +172,6 @@ export async function removerItemEncomenda(
   }, "Item removido da encomenda.");
 }
 
-export async function moverItemEncomenda(
-  _a: Resultado | null,
-  dados: FormData,
-): Promise<Resultado> {
-  return acaoDoAdmin(async () => {
-    await trocarOrdem("orderSectionItem", texto(dados.get("id")), texto(dados.get("direcao")));
-  }, "Ordem alterada.");
-}
-
 /* ==========================================================================
    SOBRE
    ========================================================================== */
@@ -228,15 +210,6 @@ export async function apagarBloco(
   return acaoDoAdmin(async () => {
     await prisma.contentBlock.delete({ where: { id: texto(dados.get("id")) } });
   }, "Bloco apagado.");
-}
-
-export async function moverBloco(
-  _a: Resultado | null,
-  dados: FormData,
-): Promise<Resultado> {
-  return acaoDoAdmin(async () => {
-    await trocarOrdem("contentBlock", texto(dados.get("id")), texto(dados.get("direcao")));
-  }, "Ordem alterada. O lado da foto acompanha a posição.");
 }
 
 /* ==========================================================================
@@ -377,12 +350,6 @@ export async function alternarSecao(_a: Resultado | null, dados: FormData): Prom
   }, "Seção alterada.");
 }
 
-export async function moverSecao(_a: Resultado | null, dados: FormData): Promise<Resultado> {
-  return acaoDoAdmin(async () => {
-    await trocarOrdem("siteSection", texto(dados.get("id")), texto(dados.get("direcao")));
-  }, "Ordem da página alterada.");
-}
-
 /* ==========================================================================
    IMAGENS
    ========================================================================== */
@@ -428,29 +395,4 @@ export async function renomearImagem(_a: Resultado | null, dados: FormData): Pro
     if (!alt) throw new Error("Escreva o que a foto mostra.");
     await prisma.media.update({ where: { id: texto(dados.get("id")) }, data: { altText: alt } });
   }, "Descrição salva.");
-}
-
-/* ==========================================================================
-   Apoio
-   ========================================================================== */
-
-type Ordenavel = "highlight" | "contentBlock" | "orderSectionItem" | "siteSection";
-
-async function trocarOrdem(tabela: Ordenavel, id: string, direcao: string) {
-  const modelo = prisma[tabela] as typeof prisma.highlight;
-
-  const atual = await modelo.findUnique({ where: { id } });
-  if (!atual) throw new Error("Item não encontrado.");
-
-  const paraCima = direcao === "subir";
-  const vizinho = await modelo.findFirst({
-    where: { order: paraCima ? { lt: atual.order } : { gt: atual.order } },
-    orderBy: { order: paraCima ? "desc" : "asc" },
-  });
-  if (!vizinho) return;
-
-  await prisma.$transaction([
-    modelo.update({ where: { id: atual.id }, data: { order: vizinho.order } }),
-    modelo.update({ where: { id: vizinho.id }, data: { order: atual.order } }),
-  ]);
 }

@@ -1,10 +1,9 @@
 import Link from "next/link";
-import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import { formatarPreco } from "@/lib/formato";
 import { Titulo } from "../componentes";
 import { Categorias } from "./categorias";
-import { LinhaDoItem } from "./linha-do-item";
+import { ListaDeItens } from "./lista-de-itens";
 
 export default async function AdminCardapio() {
   const categorias = await prisma.category.findMany({
@@ -62,32 +61,20 @@ export default async function AdminCardapio() {
                 .
               </p>
             ) : (
-              <ul className="mt-4 space-y-2">
-                {c.products.map((p, i) => (
-                  <LinhaDoItem
-                    key={p.id}
-                    id={p.id}
-                    nome={p.name}
-                    preco={formatarPreco(Number(p.price))}
-                    precoPromo={p.promoPrice !== null ? formatarPreco(Number(p.promoPrice)) : null}
-                    disponivel={p.available}
-                    destaque={p.featured}
-                    primeiro={i === 0}
-                    ultimo={i === c.products.length - 1}
-                    miniatura={
-                      p.media ? (
-                        <Image
-                          src={p.media.url}
-                          alt=""
-                          fill
-                          sizes="48px"
-                          className="object-cover"
-                        />
-                      ) : null
-                    }
-                  />
-                ))}
-              </ul>
+              <div className="mt-4">
+                <ListaDeItens
+                  itens={c.products.map((p) => ({
+                    id: p.id,
+                    nome: p.name,
+                    preco: formatarPreco(Number(p.price)),
+                    precoPromo:
+                      p.promoPrice !== null ? formatarPreco(Number(p.promoPrice)) : null,
+                    disponivel: p.available,
+                    destaque: p.featured,
+                    imagemUrl: p.media?.url ?? null,
+                  }))}
+                />
+              </div>
             )}
           </section>
         ))}
