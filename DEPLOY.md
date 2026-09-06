@@ -20,18 +20,37 @@ No Render: **New → Web Service**, apontando para este repositório.
 
 | Campo | Valor |
 |---|---|
-| Runtime | Node |
-| Build Command | `npm install && npm run build` |
+| Language | **Node** |
+| Build Command | `npm install && npx prisma migrate deploy && npm run build` |
 | Start Command | `npm start` |
-| Pre-Deploy Command | `npm run migrate:deploy` |
+| Pre-Deploy Command | deixe vazio |
 
-O `npm run build` já roda o `prisma generate` sozinho. Isso é obrigatório: o
-client do Prisma é gerado, nunca versionado, então sem esse passo o build
-falha com "Cannot find module ./src/generated/prisma/client".
+**A linguagem precisa ser Node.** Se ficar em outra, o Render preenche o build
+e o start com comandos de outra tecnologia e nada funciona.
 
-O **Pre-Deploy Command** aplica as migrações no banco. Ele usa `migrate deploy`,
-que só aplica o que falta. Nunca use `migrate dev` em produção: ele é
-interativo e pode apagar dados.
+O Build Command faz três coisas, nesta ordem:
+
+1. `npm install` instala as dependências
+2. `npx prisma migrate deploy` cria as tabelas no banco. Usa `deploy`, e nunca
+   `migrate dev`: o segundo é interativo e pode apagar dados
+3. `npm run build` compila o site, e ele já roda o `prisma generate` sozinho.
+   Isso é obrigatório: o client do Prisma é gerado, nunca versionado, então sem
+   esse passo o build falha com "Cannot find module ./src/generated/prisma/client"
+
+A migração vai no Build Command de propósito. O Render tem um campo
+**Pre-Deploy Command**, que seria o lugar mais correto, mas ele é **bloqueado
+no plano gratuito**. Rodar no build resolve, e o `migrate deploy` só aplica o
+que falta, então repetir em deploys futuros não causa problema.
+
+**Se o build falhar dizendo que não conseguiu conectar no banco:** tire a
+migração do build e ponha no start.
+
+- Build Command: `npm install && npm run build`
+- Start Command: `npx prisma migrate deploy && npm start`
+
+No start a conexão interna com o banco sempre funciona. A troca é que a
+migração passa a rodar a cada reinício do serviço, o que é inofensivo mas
+deixa a primeira visita um pouco mais lenta.
 
 ## 3. Variáveis de ambiente
 
