@@ -4,9 +4,10 @@ import "./globals.css";
 
 // Display com personalidade real. Fraunces tem eixo óptico e um leve desalinho
 // nas serifas que combina com confeitaria artesanal, e cobre todo o português.
+// Sem `weight`: a fonte entra como variável, o que libera os eixos SOFT e WONK
+// e ainda dá toda a faixa de peso num arquivo só.
 const display = Fraunces({
   subsets: ["latin", "latin-ext"],
-  weight: ["400", "600", "700"],
   axes: ["SOFT", "WONK", "opsz"],
   variable: "--fonte-display",
   display: "swap",
