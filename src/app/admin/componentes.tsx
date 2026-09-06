@@ -15,10 +15,24 @@ import type { Resultado } from "@/lib/admin";
 const BORDA =
   "w-full rounded-xl border border-tinta/15 bg-creme px-3.5 py-2.5 text-tinta outline-none transition-colors focus:border-oliva";
 
-export function Rotulo({ children }: { children: React.ReactNode }) {
+export function Rotulo({
+  children,
+  obrigatorio,
+}: {
+  children: React.ReactNode;
+  obrigatorio?: boolean;
+}) {
   return (
     <span className="font-rotulo text-[0.58rem] uppercase tracking-[0.18em] text-tinta-suave">
       {children}
+      {/* Campo obrigatório marcado na tela, e não só no `required` do
+          navegador. Sem a marca, a pessoa só descobre que o campo era
+          obrigatório depois de tentar salvar e apanhar. */}
+      {obrigatorio && (
+        <span className="ml-1.5 text-terracota" title="Precisa ser preenchido">
+          obrigatório
+        </span>
+      )}
     </span>
   );
 }
@@ -42,7 +56,7 @@ export function Campo({
 }) {
   return (
     <label className="block">
-      <Rotulo>{rotulo}</Rotulo>
+      <Rotulo obrigatorio={obrigatorio}>{rotulo}</Rotulo>
       <input
         name={nome}
         type={tipo}

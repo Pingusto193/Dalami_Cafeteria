@@ -3,19 +3,16 @@ import { buscarCardapio, buscarRodape } from "@/lib/consultas";
 import { formatarPreco, type ProdutoView } from "@/lib/formato";
 import { Cabecalho, Rodape } from "@/components/estrutura";
 import { Revela } from "@/components/cliente";
+import { metadadosDaPagina } from "@/lib/metadados";
 
 export const revalidate = 3600;
 
 export async function generateMetadata() {
   const { config } = await buscarRodape();
-  const titulo = `Cardápio | ${config?.siteName ?? "Dalami Confeitaria e Cafeteria"}`;
-  return {
-    title: titulo,
-    description:
-      config?.seoDescription ??
-      "Cafés, doces, salgados e combos da Dalami Confeitaria e Cafeteria.",
-    openGraph: { title: titulo, type: "website", locale: "pt_BR" },
-  };
+  return metadadosDaPagina({
+    titulo: `Cardápio | ${config?.siteName ?? "Dalami Confeitaria e Cafeteria"}`,
+    descricao: "Cafés, doces e o que mais sai da nossa bancada, com preço atualizado.",
+  });
 }
 
 function Preco({ produto }: { produto: ProdutoView }) {

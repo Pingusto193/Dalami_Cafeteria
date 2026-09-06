@@ -4,18 +4,16 @@ import { buscarEncomenda, buscarRodape } from "@/lib/consultas";
 import { formatarPreco } from "@/lib/formato";
 import { Cabecalho, Rodape } from "@/components/estrutura";
 import { Revela } from "@/components/cliente";
+import { metadadosDaPagina } from "@/lib/metadados";
 
 export const revalidate = 3600;
 
 export async function generateMetadata() {
   const { config } = await buscarRodape();
-  const titulo = `Encomendas | ${config?.siteName ?? "Dalami Confeitaria e Cafeteria"}`;
-  return {
-    title: titulo,
-    description:
-      "Bolos inteiros e bandejas de docinho feitos sob encomenda na Dalami Confeitaria e Cafeteria.",
-    openGraph: { title: titulo, type: "website", locale: "pt_BR" },
-  };
+  return metadadosDaPagina({
+    titulo: `Encomendas | ${config?.siteName ?? "Dalami Confeitaria e Cafeteria"}`,
+    descricao: "Bolos inteiros e bandejas de docinho feitos sob encomenda.",
+  });
 }
 
 export default async function Encomenda() {

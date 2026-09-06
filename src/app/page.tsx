@@ -16,6 +16,7 @@ import {
   StatusHorario,
 } from "@/components/cliente";
 import { Cabecalho, Rodape } from "@/components/estrutura";
+import { metadadosDaPagina } from "@/lib/metadados";
 
 export default async function Home() {
   const [secoes, destaques, blocosSobre, encomenda, cardapio, rodape] = await Promise.all([
@@ -258,7 +259,18 @@ export default async function Home() {
     <>
       <PausaEmAbaEscondida />
       <Cabecalho canal={canal} />
-      <main id="conteudo">{secoes.map((chave) => pecas[chave] ?? null)}</main>
+      <main id="conteudo">
+        {/* Título da página, invisível na tela e presente para busca e leitor
+            de tela. O maior texto que aparece é o do destaque, que muda a cada
+            slide, então ele não serve de título da página: seria como a home
+            se chamar "Torta de brigadeiro" hoje e outra coisa amanhã. */}
+        <h1 className="sr-only">
+          {config?.siteName ?? "Dalami Confeitaria e Cafeteria"}
+          {config?.locationRegion ? ` — ${config.locationRegion}` : ""}
+        </h1>
+
+        {secoes.map((chave) => pecas[chave] ?? null)}
+      </main>
       <Rodape footerText={config?.footerText ?? null} />
     </>
   );
@@ -267,15 +279,5 @@ export default async function Home() {
 export const revalidate = 3600;
 
 export async function generateMetadata() {
-  const { config } = await buscarRodape();
-  return {
-    title: config?.seoTitle ?? "Dalami Confeitaria e Cafeteria",
-    description: config?.seoDescription ?? undefined,
-    openGraph: {
-      title: config?.seoTitle ?? "Dalami Confeitaria e Cafeteria",
-      description: config?.seoDescription ?? undefined,
-      type: "website",
-      locale: "pt_BR",
-    },
-  };
+  return metadadosDaPagina();
 }
