@@ -184,13 +184,6 @@ export async function buscarEncomenda() {
   };
 }
 
-/** Monta o link do WhatsApp já com o nome do item na mensagem. */
-export function linkEncomenda(whatsapp: string | null, item?: string) {
-  if (!whatsapp) return null;
-  if (!item) return whatsapp;
-  const texto = encodeURIComponent(`Olá! Gostaria de encomendar: ${item}`);
-  return `${whatsapp}?text=${texto}`;
-}
 
 export async function buscarRodape() {
   const [config, redes, canais, horarios, excecoes] = await Promise.all([
