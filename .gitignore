@@ -15,9 +15,10 @@ next-env.d.ts
 /src/generated/
 
 # variáveis de ambiente — nunca versionar segredos
+# O padrão é amplo de propósito: .env.bak, .env.old e afins também carregam
+# credenciais, e a regra antiga só pegava o `.env` exato.
 .env
-.env.local
-.env.*.local
+.env.*
 !.env.example
 
 # uploads do adaptador de storage local (dev)

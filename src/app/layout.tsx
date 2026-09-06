@@ -53,20 +53,8 @@ export default function RootLayout({
       <body>
         <div className="ambiente" aria-hidden="true" />
 
-        {/* Abertura da marca. É CSS puro e vem no HTML do servidor, então já
-            está pintada no primeiro quadro, sem piscar o conteúdo antes. */}
-        <div className="abertura" aria-hidden="true">
-          <div className="abertura-conteudo text-center">
-            <p className="abertura-nome font-display text-[clamp(2.6rem,9vw,4.5rem)] leading-none font-semibold tracking-tight text-cacau">
-              Dalami
-            </p>
-            <div className="abertura-fita mx-auto mt-5 h-px w-32 bg-dourado" />
-            <p className="abertura-tipo mt-5 font-rotulo text-[0.6rem] uppercase tracking-[0.42em] text-tinta-tenue">
-              Confeitaria e Cafeteria
-            </p>
-          </div>
-        </div>
-
+        {/* A abertura da marca fica no Cabecalho, que só as páginas públicas
+            usam. No painel ela seria só atraso entre uma tela e outra. */}
         <TransicaoDePagina />
 
         <a

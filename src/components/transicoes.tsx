@@ -64,6 +64,11 @@ export function TransicaoDePagina() {
       // e cobrir a tela para descer duas seções seria exagero.
       if (url.pathname === window.location.pathname) return;
 
+      // O painel não recebe transição. Lá a pessoa está trabalhando, e meio
+      // segundo de cortina a cada clique vira atraso, não charme.
+      if (url.pathname.startsWith("/admin")) return;
+      if (window.location.pathname.startsWith("/admin")) return;
+
       if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
       // stopPropagation junto com preventDefault: o <Link> do Next tem o

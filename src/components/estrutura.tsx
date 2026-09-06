@@ -39,7 +39,23 @@ export function Marca({ claro = false }: { claro?: boolean }) {
  */
 export function Cabecalho({ canal }: { canal: Canal }) {
   return (
-    <header className="sticky top-0 z-40 border-b border-tinta/8 bg-creme-fundo/85 backdrop-blur-md">
+    <>
+      {/* Abertura da marca. É CSS puro e vem no HTML do servidor, então já
+          está pintada no primeiro quadro, sem piscar o conteúdo antes.
+          Mora aqui, e não no layout raiz, para não aparecer no painel. */}
+      <div className="abertura" aria-hidden="true">
+        <div className="abertura-conteudo text-center">
+          <p className="abertura-nome font-display text-[clamp(2.6rem,9vw,4.5rem)] leading-none font-semibold tracking-tight text-cacau">
+            Dalami
+          </p>
+          <div className="abertura-fita mx-auto mt-5 h-px w-32 bg-dourado" />
+          <p className="abertura-tipo mt-5 font-rotulo text-[0.6rem] uppercase tracking-[0.42em] text-tinta-tenue">
+            Confeitaria e Cafeteria
+          </p>
+        </div>
+      </div>
+
+      <header className="sticky top-0 z-40 border-b border-tinta/8 bg-creme-fundo/85 backdrop-blur-md">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-6 px-5 py-4">
         <Link href="/" aria-label="Dalami Confeitaria e Cafeteria, ir para a página inicial">
           <Marca />
@@ -62,8 +78,9 @@ export function Cabecalho({ canal }: { canal: Canal }) {
             Ver cardápio
           </Link>
         )}
-      </div>
-    </header>
+        </div>
+      </header>
+    </>
   );
 }
 
@@ -92,6 +109,32 @@ export function Rodape({ footerText }: { footerText: string | null }) {
           © {new Date().getFullYear()} Dalami Confeitaria e Cafeteria.
         </p>
       </div>
+
+      <EntradaDoPainel />
     </footer>
+  );
+}
+
+/**
+ * Porta de entrada do painel.
+ *
+ * Um ponto pequeno e quase invisível no canto de baixo à direita. Some para o
+ * visitante comum e aparece um pouco ao passar o mouse ou ao chegar por tab.
+ *
+ * Discreto não é escondido de verdade: quem souber o endereço `/admin` chega
+ * do mesmo jeito. Quem guarda a porta é o login, não o disfarce. Por isso ele
+ * não fica invisível de todo, senão viraria uma armadilha para quem navega
+ * por teclado.
+ */
+function EntradaDoPainel() {
+  return (
+    <a
+      href="/admin"
+      aria-label="Entrar no painel de administração"
+      title="Painel"
+      className="btn fixed right-3 bottom-3 z-30 grid size-7 place-items-center rounded-full opacity-15 transition-opacity duration-300 hover:opacity-70 focus-visible:opacity-100"
+    >
+      <span aria-hidden="true" className="block size-1.5 rounded-full bg-tinta-tenue" />
+    </a>
   );
 }
