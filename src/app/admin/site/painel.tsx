@@ -114,21 +114,29 @@ export function PainelSite({
         </Cartao>
 
         <Cartao className="space-y-6">
-          <h2 className="font-display text-lg font-semibold text-cacau">Marca</h2>
+          <div>
+            <h2 className="font-display text-lg font-semibold text-cacau">
+              Logo e ícone
+            </h2>
+            <p className="mt-1 text-sm text-tinta-suave">
+              As duas imagens da sua marca no site: a que aparece no topo das
+              páginas e a bolinha que aparece na aba do navegador.
+            </p>
+          </div>
 
           <EscolherImagem
             nome="logo"
-            rotulo="Logo"
+            rotulo="Logo da Dalami"
             atual={dados.logo}
             disponiveis={imagens}
-            dica="Enquanto não tiver o arquivo do logo em alta, o site mostra o nome escrito."
+            dica="Aparece no canto superior esquerdo de todas as páginas. Enquanto não houver um arquivo aqui, o site mostra o nome escrito."
           />
           <EscolherImagem
             nome="favicon"
             rotulo="Ícone da aba do navegador"
             atual={dados.favicon}
             disponiveis={imagens}
-            dica="Uma imagem quadrada e simples, que fica legível bem pequena."
+            dica="É a imagenzinha que aparece na aba, ao lado do nome da página. Use uma imagem quadrada e simples, porque ela fica bem pequena."
           />
         </Cartao>
 

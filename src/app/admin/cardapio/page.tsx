@@ -7,6 +7,10 @@ import { ListaDeItens } from "./lista-de-itens";
 
 export default async function AdminCardapio() {
   const categorias = await prisma.category.findMany({
+    // A categoria das encomendas fica de fora daqui de propósito: ela tem uma
+    // tela só dela, e mostrar o mesmo conteúdo em dois lugares faz a pessoa
+    // se perguntar em qual dos dois deve mexer.
+    where: { slug: { not: "encomendas" } },
     orderBy: { order: "asc" },
     include: {
       products: { orderBy: { order: "asc" }, include: { media: true } },
