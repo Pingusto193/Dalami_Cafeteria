@@ -180,12 +180,14 @@ h3 {
   place-items: center;
   background-color: var(--color-creme-fundo);
   pointer-events: none;
-  animation: abertura-sai 2s var(--ease-suave) forwards;
+  animation: abertura-sai 3.6s var(--ease-suave) forwards;
 }
 
+/* A marca termina de montar por volta de 1,7s. O bloco fica parado até 72%
+   (uns 2,6s) e só então some, para dar tempo de ler antes de sair. */
 @keyframes abertura-sai {
   0%,
-  62% {
+  72% {
     opacity: 1;
     visibility: visible;
   }
@@ -196,11 +198,11 @@ h3 {
 }
 
 .abertura-nome {
-  animation: abertura-entra 1s var(--ease-suave) both;
+  animation: abertura-entra 1.2s var(--ease-suave) both;
 }
 
 .abertura-tipo {
-  animation: abertura-entra 1s var(--ease-suave) 0.18s both;
+  animation: abertura-entra 1.2s var(--ease-suave) 0.32s both;
 }
 
 @keyframes abertura-entra {
@@ -217,7 +219,7 @@ h3 {
 /* A fita da marca, desenhada da esquerda para a direita. */
 .abertura-fita {
   transform-origin: left;
-  animation: abertura-fita 0.9s var(--ease-suave) 0.42s both;
+  animation: abertura-fita 1.05s var(--ease-suave) 0.6s both;
 }
 
 @keyframes abertura-fita {
