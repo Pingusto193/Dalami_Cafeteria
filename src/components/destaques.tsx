@@ -218,15 +218,6 @@ export function Destaques({ destaques }: { destaques: DestaqueView[] }) {
               </div>
             ))}
           </div>
-
-          {/* Medalhão dourado, o mesmo que a casa põe no topo dos bolos. */}
-          <div className="absolute -top-3 -right-2 hidden size-20 place-items-center rounded-full border border-dourado/50 bg-creme-fundo text-center sm:grid lg:-right-5 lg:size-24">
-            <p className="font-rotulo text-[0.5rem] leading-tight uppercase tracking-[0.14em] text-cacau lg:text-[0.55rem]">
-              Feito
-              <br />
-              <span className="text-dourado">na casa</span>
-            </p>
-          </div>
         </div>
       </div>
 
