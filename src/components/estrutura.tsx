@@ -2,7 +2,6 @@ import Link from "next/link";
 import { FitaDourada } from "@/components/cliente";
 
 type Canal = { nome: string; url: string; tipo: string } | null;
-type Rede = { nome: string; url: string };
 
 /**
  * Marca em texto, no lugar do logo.
@@ -32,6 +31,12 @@ export function Marca({ claro = false }: { claro?: boolean }) {
   );
 }
 
+/**
+ * Cabeçalho enxuto: a marca e uma única ação.
+ *
+ * Sem menu de navegação de propósito. A home já leva para cardápio e encomenda
+ * nas próprias seções, e um menu repetindo isso no topo só divide a atenção.
+ */
 export function Cabecalho({ canal }: { canal: Canal }) {
   return (
     <header className="sticky top-0 z-40 border-b border-tinta/8 bg-creme-fundo/85 backdrop-blur-md">
@@ -39,21 +44,6 @@ export function Cabecalho({ canal }: { canal: Canal }) {
         <Link href="/" aria-label="Dalami Confeitaria e Cafeteria, ir para a página inicial">
           <Marca />
         </Link>
-
-        <nav aria-label="Principal" className="hidden items-center gap-8 md:flex">
-          <Link className="text-sm text-tinta-suave transition-colors hover:text-cacau" href="/cardapio">
-            Cardápio
-          </Link>
-          <Link className="text-sm text-tinta-suave transition-colors hover:text-cacau" href="/#encomenda">
-            Encomenda
-          </Link>
-          <Link className="text-sm text-tinta-suave transition-colors hover:text-cacau" href="/#sobre">
-            Sobre
-          </Link>
-          <Link className="text-sm text-tinta-suave transition-colors hover:text-cacau" href="/#contato">
-            Contato
-          </Link>
-        </nav>
 
         {canal ? (
           <a
@@ -77,57 +67,26 @@ export function Cabecalho({ canal }: { canal: Canal }) {
   );
 }
 
-export function Rodape({
-  footerText,
-  redes,
-  regiao,
-}: {
-  footerText: string | null;
-  redes: Rede[];
-  regiao: string | null;
-}) {
+/**
+ * Rodapé enxuto: a marca e a assinatura, que o dono edita pelo painel.
+ *
+ * Sem menu e sem repetir o endereço. A seção de Localização na home já diz
+ * onde a loja fica, e repetir a mesma informação duas vezes na mesma rolagem
+ * não ajuda ninguém.
+ */
+export function Rodape({ footerText }: { footerText: string | null }) {
   return (
     <footer className="bg-cacau text-creme/70">
       <div className="mx-auto max-w-6xl px-5 py-12">
         {/* A fita dourada, o elemento assinatura do site: toda encomenda da
-            casa sai com uma fita amarrada, então ela costura as seções. */}
+            casa sai com uma fita amarrada, então ela fecha a página. */}
         <FitaDourada className="mb-10 h-8 w-full opacity-60" />
 
-        <div className="flex flex-wrap items-end justify-between gap-8">
-          <div>
-            <Marca claro />
-            {footerText && (
-              <p className="mt-5 font-display text-lg text-dourado-claro">{footerText}</p>
-            )}
-            {regiao && <p className="mt-2 text-sm text-creme/50">{regiao}</p>}
-          </div>
+        <Marca claro />
 
-          <nav aria-label="Rodapé" className="flex flex-wrap gap-x-7 gap-y-3 text-sm">
-            <Link className="transition-colors hover:text-creme-alto" href="/cardapio">
-              Cardápio
-            </Link>
-            <Link className="transition-colors hover:text-creme-alto" href="/#encomenda">
-              Encomenda
-            </Link>
-            <Link className="transition-colors hover:text-creme-alto" href="/#sobre">
-              Sobre
-            </Link>
-            <Link className="transition-colors hover:text-creme-alto" href="/#horario">
-              Horário
-            </Link>
-            {redes.map((r) => (
-              <a
-                key={r.url}
-                className="transition-colors hover:text-creme-alto"
-                href={r.url}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                {r.nome}
-              </a>
-            ))}
-          </nav>
-        </div>
+        {footerText && (
+          <p className="mt-5 font-display text-lg text-dourado-claro">{footerText}</p>
+        )}
 
         <p className="mt-10 border-t border-creme/10 pt-6 text-xs text-creme/40">
           © {new Date().getFullYear()} Dalami Confeitaria e Cafeteria.

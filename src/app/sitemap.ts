@@ -15,5 +15,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
   return [
     { url: `${url}/`, lastModified: agora, changeFrequency: "weekly", priority: 1 },
     { url: `${url}/cardapio`, lastModified: agora, changeFrequency: "weekly", priority: 0.8 },
+    { url: `${url}/encomenda`, lastModified: agora, changeFrequency: "weekly", priority: 0.8 },
   ];
 }

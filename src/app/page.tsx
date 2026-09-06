@@ -97,16 +97,14 @@ export default async function Home() {
               dangerouslySetInnerHTML={{ __html: encomenda.descricao }}
             />
           )}
-          {encomenda.whatsapp && (
-            <a
-              href={encomenda.whatsapp}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn mt-9 inline-flex items-center gap-2 rounded-full bg-creme-alto px-8 py-4 font-medium text-terracota transition-transform hover:scale-[1.02]"
-            >
-              Falar no WhatsApp
-            </a>
-          )}
+          {/* Leva para a página de encomenda, que tem o cardápio próprio.
+              Não abre o WhatsApp direto: a pessoa escolhe o que quer antes. */}
+          <Link
+            href="/encomenda"
+            className="btn mt-9 inline-flex items-center gap-2 rounded-full bg-creme-alto px-8 py-4 font-medium text-terracota transition-transform hover:scale-[1.02]"
+          >
+            Ver o que fazemos por encomenda
+          </Link>
         </Revela>
       </section>
     ) : null,
@@ -169,23 +167,20 @@ export default async function Home() {
     location:
       config?.locationRegion ? (
         <section key="location" id="localizacao" className="scroll-mt-24 bg-oliva px-5 py-16 text-creme-alto lg:py-20">
-          <Revela className="mx-auto flex max-w-6xl flex-col items-start gap-6 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <p className="font-rotulo text-[0.66rem] uppercase tracking-[0.32em] text-dourado-claro">
-                Onde estamos
+          {/* Sem indicador de aberto/fechado aqui: a seção de Horário logo
+              abaixo já responde isso, e repetir na mesma rolagem é ruído. */}
+          <Revela className="mx-auto max-w-6xl">
+            <p className="font-rotulo text-[0.66rem] uppercase tracking-[0.32em] text-dourado-claro">
+              Onde estamos
+            </p>
+            <p className="mt-4 font-display text-[clamp(1.7rem,4vw,2.6rem)] leading-tight font-semibold">
+              {config.locationRegion}
+            </p>
+            {config.locationNote && (
+              <p className="mt-3 max-w-[46ch] text-[1.05rem] text-creme/80">
+                {config.locationNote}
               </p>
-              <p className="mt-4 font-display text-[clamp(1.7rem,4vw,2.6rem)] leading-tight font-semibold">
-                {config.locationRegion}
-              </p>
-              {config.locationNote && (
-                <p className="mt-3 max-w-[46ch] text-[1.05rem] text-creme/80">
-                  {config.locationNote}
-                </p>
-              )}
-            </div>
-            <div className="shrink-0">
-              <StatusHorario periodos={rodape.horarios} excecoes={rodape.excecoes} claro />
-            </div>
+            )}
           </Revela>
         </section>
       ) : null,
@@ -264,11 +259,7 @@ export default async function Home() {
       <PausaEmAbaEscondida />
       <Cabecalho canal={canal} />
       <main id="conteudo">{secoes.map((chave) => pecas[chave] ?? null)}</main>
-      <Rodape
-        footerText={config?.footerText ?? null}
-        redes={rodape.redes}
-        regiao={config?.locationRegion ?? null}
-      />
+      <Rodape footerText={config?.footerText ?? null} />
     </>
   );
 }

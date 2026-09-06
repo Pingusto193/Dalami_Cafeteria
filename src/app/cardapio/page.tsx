@@ -219,11 +219,7 @@ export default async function Cardapio() {
         )}
       </main>
 
-      <Rodape
-        footerText={config?.footerText ?? null}
-        redes={rodape.redes}
-        regiao={config?.locationRegion ?? null}
-      />
+      <Rodape footerText={config?.footerText ?? null} />
     </>
   );
 }

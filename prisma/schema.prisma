@@ -90,9 +90,10 @@ model Product {
 
   /// Restrict: apagar uma categoria que ainda tem produtos deve FALHAR com uma
   /// mensagem clara no admin, nunca apagar os produtos em silêncio.
-  category   Category    @relation(fields: [categoryId], references: [id], onDelete: Restrict)
-  media      Media?      @relation(fields: [mediaId], references: [id], onDelete: SetNull)
-  highlights Highlight[]
+  category    Category           @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  media       Media?             @relation(fields: [mediaId], references: [id], onDelete: SetNull)
+  highlights  Highlight[]
+  encomendas  OrderSectionItem[]
 
   @@index([categoryId, order])
   @@index([featured])
@@ -175,15 +176,35 @@ model SiteSection {
 
 /// Singleton da seção "Fazer encomenda".
 ///
-/// Nesta etapa é só texto + botão de WhatsApp. A seleção de quais itens do
-/// cardápio ficam disponíveis para encomenda virá depois, numa tabela
-/// OrderSectionItem (productId, order) que NÃO deve ser criada agora.
+/// O botão na home leva para a página /encomenda, que tem um cardápio próprio,
+/// separado do cardápio do dia a dia. Bolo inteiro e bandeja de docinho não
+/// ficam na vitrine, mas existem sob encomenda.
 model OrderSection {
   id             String  @id @default("singleton")
   title          String  @default("Fazer encomenda")
   description    String?
   whatsappNumber String?
   active         Boolean @default(true)
+
+  itens OrderSectionItem[]
+}
+
+/// O cardápio de encomenda: o admin escolhe quais produtos aparecem aqui e em
+/// que ordem. Um produto pode estar só na encomenda, só no cardápio do dia, ou
+/// nos dois. Quem controla é a categoria do produto (se ela está ativa, ele
+/// aparece no cardápio do dia) mais a presença nesta lista.
+model OrderSectionItem {
+  id        String @id @default(cuid())
+  sectionId String @default("singleton")
+  productId String
+  order     Int    @default(0)
+
+  section OrderSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  product Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  /// O mesmo produto não pode ser adicionado duas vezes à encomenda.
+  @@unique([sectionId, productId])
+  @@index([order])
 }
 
 // ============================================================================

@@ -172,7 +172,10 @@ export function Destaques({ destaques }: { destaques: DestaqueView[] }) {
                 </svg>
               </button>
 
-              <div className="absolute top-5 right-5 flex gap-2 sm:top-7 sm:right-7">
+              {/* Barras de progresso. A do destaque atual enche no tempo do
+                  avanço automático, para a troca não pegar ninguém de
+                  surpresa. Pausa junto com o carrossel no hover e no foco. */}
+              <div className="absolute top-5 right-5 flex items-center gap-1.5 sm:top-7 sm:right-7">
                 {destaques.map((d, i) => (
                   <button
                     key={d.id}
@@ -180,16 +183,33 @@ export function Destaques({ destaques }: { destaques: DestaqueView[] }) {
                     onClick={() => setAtual(i)}
                     aria-label={`Ir para o destaque ${i + 1}: ${d.titulo ?? ""}`}
                     aria-current={i === atual}
-                    className="btn grid size-7 place-items-center"
+                    className="btn group/barra grid h-7 place-items-center px-0.5"
                   >
                     <span
-                      className="block h-1 rounded-full transition-all duration-500"
-                      style={{
-                        width: i === atual ? "1.6rem" : "0.5rem",
-                        backgroundColor:
-                          i === atual ? "var(--color-dourado-claro)" : "rgba(247,243,240,0.45)",
-                      }}
-                    />
+                      className="relative block h-[3px] overflow-hidden rounded-full bg-creme/30 transition-all duration-500"
+                      style={{ width: i === atual ? "2.6rem" : "1rem" }}
+                    >
+                      {i === atual && (
+                        <span
+                          // key={atual} reinicia a animação a cada troca:
+                          // sem isso o React reaproveita o nó e a barra
+                          // continua de onde parou.
+                          key={atual}
+                          className="absolute inset-y-0 left-0 w-full origin-left rounded-full bg-dourado-claro"
+                          style={
+                            semMovimento
+                              ? { transform: "scaleX(1)" }
+                              : {
+                                  animation: `encher ${INTERVALO_MS}ms linear forwards`,
+                                  animationPlayState: pausado ? "paused" : "running",
+                                }
+                          }
+                        />
+                      )}
+                      {i < atual && (
+                        <span className="absolute inset-0 rounded-full bg-dourado-claro/45" />
+                      )}
+                    </span>
                   </button>
                 ))}
               </div>

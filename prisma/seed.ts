@@ -39,6 +39,11 @@ const prisma = new PrismaClient({ adapter });
 async function main() {
   console.log("\nPopulando o banco com o cardápio de exemplo...\n");
 
+  // Limpeza: a categoria Combos saiu do briefing. Removida aqui para quem já
+  // tinha rodado a versão anterior do seed não ficar com ela órfã no banco.
+  await prisma.product.deleteMany({ where: { categoryId: "cat-combos" } });
+  await prisma.category.deleteMany({ where: { id: "cat-combos" } });
+
   // ---------------------------------------------------------------------------
   // Mídia
   // ---------------------------------------------------------------------------
@@ -118,21 +123,26 @@ async function main() {
   // Categorias
   // ---------------------------------------------------------------------------
   const categorias = [
-    { id: "cat-cafes", name: "Cafés", slug: "cafes", order: 0,
+    { id: "cat-cafes", name: "Cafés", slug: "cafes", order: 0, active: true,
       description: "Grãos moídos na hora, tirados no balcão." },
-    { id: "cat-doces", name: "Doces", slug: "doces", order: 1,
+    { id: "cat-doces", name: "Doces", slug: "doces", order: 1, active: true,
       description: "Bolos, tortas e docinhos feitos na confeitaria." },
-    { id: "cat-salgados", name: "Salgados", slug: "salgados", order: 2,
+    { id: "cat-salgados", name: "Salgados", slug: "salgados", order: 2, active: true,
       description: "Assados do dia, para acompanhar o café." },
-    { id: "cat-combos", name: "Combos", slug: "combos", order: 3,
-      description: "Café e acompanhamento com preço fechado." },
+
+    // Categoria INATIVA de propósito: `active: false` tira ela do cardápio do
+    // dia a dia. Os itens continuam existindo e aparecem na página /encomenda,
+    // porque foram adicionados ao cardápio de encomenda mais abaixo.
+    // Bolo inteiro e cento de docinho não ficam na vitrine, mas são vendidos.
+    { id: "cat-encomendas", name: "Encomendas", slug: "encomendas", order: 4, active: false,
+      description: "Bolos inteiros e bandejas, feitos sob encomenda." },
   ];
 
   for (const c of categorias) {
     await prisma.category.upsert({
       where: { slug: c.slug },
-      update: {},
-      create: { ...c, active: true },
+      update: { active: c.active },
+      create: c,
     });
   }
 
@@ -212,19 +222,31 @@ async function main() {
     { id: "p-misto", categoryId: "cat-salgados", name: "Misto quente", slug: "misto-quente",
       description: "Pão de forma na chapa, presunto e queijo.", price: "13.00", order: 4 },
 
-    // --- Combos ------------------------------------------------------------
-    { id: "p-combo-manha", categoryId: "cat-combos", name: "Café com pão de queijo",
-      slug: "combo-cafe-pao-de-queijo",
-      description: "Café coado e dois pães de queijo.",
-      price: "13.50", promoPrice: "12.00", order: 0 },
-    { id: "p-combo-tarde", categoryId: "cat-combos", name: "Cappuccino com fatia de bolo",
-      slug: "combo-cappuccino-bolo",
-      description: "Cappuccino e uma fatia do bolo do dia.",
-      price: "26.00", promoPrice: "24.00", featured: true, order: 1 },
-    { id: "p-combo-dois", categoryId: "cat-combos", name: "Café da tarde para dois",
-      slug: "combo-cafe-da-tarde-para-dois",
-      description: "Dois cafés, duas fatias de bolo e dois docinhos.",
-      price: "45.00", order: 2 },
+    // --- Encomendas (categoria inativa: só aparecem em /encomenda) ----------
+    { id: "e-bolo-chocolate", categoryId: "cat-encomendas", name: "Bolo inteiro de chocolate",
+      slug: "encomenda-bolo-chocolate",
+      description: "Serve de 12 a 15 pessoas. Montado no dia da retirada.",
+      price: "120.00", mediaId: "midia-bolo-chocolate", order: 0 },
+    { id: "e-bolo-morango", categoryId: "cat-encomendas", name: "Bolo inteiro de morango",
+      slug: "encomenda-bolo-morango",
+      description: "Creme, morango fresco e merengue. Serve de 12 a 15 pessoas.",
+      price: "135.00", mediaId: "midia-bolo-morango", order: 1 },
+    { id: "e-bolo-doce-de-leite", categoryId: "cat-encomendas", name: "Bolo inteiro de doce de leite",
+      slug: "encomenda-bolo-doce-de-leite",
+      description: "Doce de leite e chocolate branco. Serve de 12 a 15 pessoas.",
+      price: "130.00", mediaId: "midia-bolo-doce-de-leite", order: 2 },
+    { id: "e-bolo-coco", categoryId: "cat-encomendas", name: "Bolo inteiro de coco",
+      slug: "encomenda-bolo-coco",
+      description: "Coco queimado, doce de leite e fios de ovos.",
+      price: "140.00", mediaId: "midia-bolo-coco", order: 3 },
+    { id: "e-torta-brigadeiro", categoryId: "cat-encomendas", name: "Torta inteira de brigadeiro",
+      slug: "encomenda-torta-brigadeiro",
+      description: "Base crocante e brigadeiro cremoso. Serve de 10 a 12 pessoas.",
+      price: "110.00", mediaId: "midia-torta-brigadeiro", order: 4 },
+    { id: "e-cento-brigadeiro", categoryId: "cat-encomendas", name: "Cento de brigadeiros",
+      slug: "encomenda-cento-brigadeiros",
+      description: "Cem unidades. Você escolhe os sabores na conversa.",
+      price: "225.00", mediaId: "midia-docinhos", order: 5 },
   ];
 
   for (const i of itens) {
@@ -358,12 +380,31 @@ async function main() {
       id: "singleton",
       title: "Fazer encomenda",
       description:
-        "<p>Quer um bolo para uma data especial, ou docinhos para uma festa? " +
-        "Fale com a gente no WhatsApp e a gente monta o pedido junto com você.</p>",
+        "<p>Bolo inteiro para uma data especial, ou bandeja de docinho para " +
+        "uma festa. Escolha abaixo o que você quer e fale com a gente no " +
+        "WhatsApp para fechar o pedido.</p>",
       whatsappNumber: "5548999999999", // PLACEHOLDER
       active: true,
     },
   });
+
+  // O cardápio de encomenda. O admin escolhe o que entra aqui e em que ordem.
+  const itensEncomenda = [
+    "e-torta-brigadeiro",
+    "e-bolo-chocolate",
+    "e-bolo-morango",
+    "e-bolo-doce-de-leite",
+    "e-bolo-coco",
+    "e-cento-brigadeiro",
+  ];
+
+  for (const [i, productId] of itensEncomenda.entries()) {
+    await prisma.orderSectionItem.upsert({
+      where: { sectionId_productId: { sectionId: "singleton", productId } },
+      update: { order: i },
+      create: { sectionId: "singleton", productId, order: i },
+    });
+  }
 
   // ---------------------------------------------------------------------------
   // Horários — PLACEHOLDER, o horário real não foi informado

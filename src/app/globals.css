@@ -160,6 +160,25 @@ h3 {
 }
 
 /* ===========================================================================
+   BARRA DE PROGRESSO DO CARROSSEL
+
+   Enche da esquerda para a direita no mesmo tempo do avanço automático, para
+   a pessoa ver quanto falta para trocar de destaque em vez de ser pega de
+   surpresa. Anima só transform, então roda no compositor.
+
+   O JS pausa isto com animation-play-state quando o ponteiro entra no hero.
+   =========================================================================== */
+
+@keyframes encher {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* ===========================================================================
    ENTRADAS
 
    IntersectionObserver acrescenta .dentro no contêiner. Os estados inicial e

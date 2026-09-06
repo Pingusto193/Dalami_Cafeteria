@@ -132,8 +132,26 @@ export async function buscarBlocosSobre() {
   }));
 }
 
+/**
+ * A seção e o cardápio de encomenda.
+ *
+ * Os itens vêm de OrderSectionItem, que é o que o admin cura. Eles NÃO
+ * dependem da categoria estar ativa: bolo inteiro mora numa categoria
+ * desligada de propósito, para não poluir o cardápio do dia a dia.
+ */
 export async function buscarEncomenda() {
-  const secao = await prisma.orderSection.findUnique({ where: { id: "singleton" } });
+  const agora = new Date();
+
+  const secao = await prisma.orderSection.findUnique({
+    where: { id: "singleton" },
+    include: {
+      itens: {
+        orderBy: { order: "asc" },
+        include: { product: { include: { media: true } } },
+      },
+    },
+  });
+
   if (!secao || !secao.active) return null;
 
   // Monta o link do WhatsApp a partir do número puro guardado no banco.
@@ -143,7 +161,35 @@ export async function buscarEncomenda() {
     titulo: secao.title,
     descricao: secao.description,
     whatsapp: numero ? `https://wa.me/${numero}` : null,
+    itens: secao.itens
+      .filter((i) => i.product.available)
+      .map((i) => ({
+        id: i.product.id,
+        nome: i.product.name,
+        slug: i.product.slug,
+        descricao: i.product.description,
+        preco: Number(i.product.price),
+        precoPromo: promoAtiva(
+          i.product.promoPrice,
+          i.product.promoStartsAt,
+          i.product.promoEndsAt,
+          agora,
+        )
+          ? Number(i.product.promoPrice)
+          : null,
+        destaque: i.product.featured,
+        disponivel: i.product.available,
+        imagem: imagem(i.product.media),
+      })),
   };
+}
+
+/** Monta o link do WhatsApp já com o nome do item na mensagem. */
+export function linkEncomenda(whatsapp: string | null, item?: string) {
+  if (!whatsapp) return null;
+  if (!item) return whatsapp;
+  const texto = encodeURIComponent(`Olá! Gostaria de encomendar: ${item}`);
+  return `${whatsapp}?text=${texto}`;
 }
 
 export async function buscarRodape() {
