@@ -51,6 +51,34 @@ function pareceHash(v) {
   return typeof v === "string" && /^\$2[aby]\$\d{2}\$/.test(v) && v.length === 60;
 }
 
+/**
+ * Guarda o hash em BASE64, e isso não é firula.
+ *
+ * O carregador de .env do Next.js expande variáveis: um `$NOME` dentro do
+ * valor vira o conteúdo daquela variável. Um hash bcrypt é `$2b$12$...`,
+ * cheio de cifrões, e era devorado na leitura: chegava ao servidor picado,
+ * com 11 ou 32 caracteres em vez de 60, e a senha certa nunca batia.
+ *
+ * Testei aspas duplas, aspas simples e cifrão escapado com barra invertida.
+ * Nenhum sobreviveu. Base64 não tem caractere especial nenhum, então passa
+ * inteiro. O `auth.ts` decodifica na leitura.
+ */
+function paraGuardar(hash) {
+  return Buffer.from(hash, "utf8").toString("base64");
+}
+
+/** Reconhece o valor guardado, nos dois formatos aceitos. */
+function hashGuardado(v) {
+  if (pareceHash(v)) return v;
+  try {
+    const d = Buffer.from(v, "base64").toString("utf8");
+    if (pareceHash(d)) return d;
+  } catch {
+    // não era base64
+  }
+  return null;
+}
+
 const mudancas = [];
 
 // --- 1. Senha ---------------------------------------------------------------
@@ -58,21 +86,24 @@ const senhaNova = process.argv[2];
 const atual = valorDe("ADMIN_PASSWORD_HASH");
 
 if (senhaNova) {
-  definir("ADMIN_PASSWORD_HASH", bcrypt.hashSync(senhaNova, 12));
-  mudancas.push("ADMIN_PASSWORD_HASH trocado pelo hash da nova senha");
+  definir("ADMIN_PASSWORD_HASH", paraGuardar(bcrypt.hashSync(senhaNova, 12)));
+  mudancas.push("senha trocada e guardada embaralhada");
 } else if (!atual) {
   console.error(
     "ADMIN_PASSWORD_HASH está vazia. Rode de novo passando a senha:\n" +
-      '  node scripts/configurar-admin.mjs "sua senha aqui"',
+      '  npm run admin:senha "sua senha aqui"',
   );
   process.exit(1);
-} else if (pareceHash(atual)) {
-  mudancas.push("ADMIN_PASSWORD_HASH já era um hash, mantido como estava");
+} else if (hashGuardado(atual)) {
+  // Já é um hash. Regrava em base64 de qualquer forma: se estiver no formato
+  // cru, o carregador do Next iria comer os cifrões na próxima leitura.
+  definir("ADMIN_PASSWORD_HASH", paraGuardar(hashGuardado(atual)));
+  mudancas.push("senha já estava embaralhada, formato de armazenamento conferido");
 } else {
-  definir("ADMIN_PASSWORD_HASH", bcrypt.hashSync(atual, 12));
+  definir("ADMIN_PASSWORD_HASH", paraGuardar(bcrypt.hashSync(atual, 12)));
   mudancas.push(
-    "ADMIN_PASSWORD_HASH estava em texto puro e virou hash bcrypt " +
-      "(a senha continua a mesma para entrar)",
+    "a senha estava em texto puro e foi embaralhada " +
+      "(a senha para entrar continua a mesma)",
   );
 }
 
