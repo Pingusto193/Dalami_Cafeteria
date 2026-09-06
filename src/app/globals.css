@@ -357,6 +357,40 @@ h3 {
 }
 
 /* ===========================================================================
+   RECOLHÍVEL
+
+   Abrir e fechar um formulário sem ele sumir de estalo.
+
+   O truque é `grid-template-rows` de 0fr para 1fr: animar `height` exigiria
+   saber a altura em pixels de antemão, e o formulário muda de tamanho
+   conforme o conteúdo. Com grid o navegador calcula sozinho, e a animação
+   continua rodando no compositor.
+
+   O filho precisa de `overflow: hidden` e `min-height: 0`, senão ele vaza
+   para fora da linha de grade enquanto ela ainda está fechando.
+   =========================================================================== */
+
+.recolhivel {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows 0.3s var(--ease-suave),
+    opacity 0.22s var(--ease-suave),
+    margin-top 0.3s var(--ease-suave);
+}
+
+.recolhivel > * {
+  overflow: hidden;
+  min-height: 0;
+}
+
+.recolhivel-aberto {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+/* ===========================================================================
    ENTRADAS
 
    IntersectionObserver acrescenta .dentro no contêiner. Os estados inicial e

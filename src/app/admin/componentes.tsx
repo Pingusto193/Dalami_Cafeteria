@@ -210,6 +210,55 @@ export function Aviso({ resultado }: { resultado: Resultado | null }) {
   );
 }
 
+/**
+ * Abre e fecha o conteúdo com uma animação, em vez de ele piscar e sumir.
+ *
+ * Duas coisas que o React não faz sozinho e que este componente resolve:
+ *
+ * 1. Ao FECHAR, o React tiraria o elemento da tela no mesmo instante, e não
+ *    sobraria nada para animar. Aqui o conteúdo continua montado até a
+ *    animação terminar, e só então some.
+ *
+ * 2. Ao ABRIR, um elemento que nasce já aberto não anima, porque não houve
+ *    mudança de estado para o navegador perceber. Por isso ele monta fechado
+ *    e só abre no quadro seguinte.
+ */
+export function Recolhivel({
+  aberto,
+  children,
+  className = "",
+}: {
+  aberto: boolean;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  const [montado, setMontado] = useState(aberto);
+  const [expandido, setExpandido] = useState(false);
+
+  useEffect(() => {
+    if (aberto) {
+      setMontado(true);
+      // Espera um quadro: sem isso o elemento nasceria já aberto e o
+      // navegador não teria de onde animar.
+      const quadro = requestAnimationFrame(() => setExpandido(true));
+      return () => cancelAnimationFrame(quadro);
+    }
+
+    setExpandido(false);
+    // Segura o conteúdo montado até a animação de fechar acabar.
+    const relogio = setTimeout(() => setMontado(false), 320);
+    return () => clearTimeout(relogio);
+  }, [aberto]);
+
+  if (!montado) return null;
+
+  return (
+    <div className={`recolhivel ${expandido ? "recolhivel-aberto" : ""} ${className}`}>
+      <div>{children}</div>
+    </div>
+  );
+}
+
 export function Cartao({
   children,
   className = "",
@@ -380,8 +429,8 @@ export function EscolherImagem({
       {dica && <p className="mt-2 text-xs text-tinta-tenue">{dica}</p>}
       {erro && <p className="mt-2 text-xs text-terracota">{erro}</p>}
 
-      {abrindo && (
-        <div className="mt-4 rounded-xl border border-tinta/12 bg-creme p-4">
+      <Recolhivel aberto={abrindo} className="mt-4">
+        <div className="rounded-xl border border-tinta/12 bg-creme p-4">
           <label className="btn inline-flex cursor-pointer rounded-full bg-oliva px-5 py-2.5 text-xs font-medium text-creme-alto transition-colors hover:bg-oliva-escuro">
             {enviando ? "Enviando..." : "Enviar uma foto nova"}
             <input
@@ -416,7 +465,7 @@ export function EscolherImagem({
             ))}
           </div>
         </div>
-      )}
+      </Recolhivel>
     </div>
   );
 }

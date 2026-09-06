@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { Aviso, Campo, Cartao, Excluir, Interruptor, Salvar } from "../componentes";
+import { Aviso, Campo, Cartao, Excluir, Interruptor, Recolhivel, Salvar } from "../componentes";
 import { ListaOrdenavel } from "../ordenavel";
 import { reordenar } from "../acoes-ordem";
 import { apagarCategoria, salvarCategoria } from "./acoes";
@@ -81,11 +81,11 @@ export function Categorias({ categorias }: { categorias: Cat[] }) {
 
       <Aviso resultado={apagar} />
 
-      {criando && (
-        <div className="mt-5 rounded-xl border border-tinta/12 bg-creme p-4">
+      <Recolhivel aberto={criando} className="mt-5">
+        <div className="rounded-xl border border-tinta/12 bg-creme p-4">
           <Formulario aoFechar={() => setCriando(false)} />
         </div>
-      )}
+      </Recolhivel>
 
       <div className="mt-5">
         <ListaOrdenavel
@@ -95,11 +95,15 @@ export function Categorias({ categorias }: { categorias: Cat[] }) {
         >
           {(c) => (
             <>
-              {editando === c.id ? (
+              {/* Os dois lados ficam montados e trocam com animação, em vez de
+                  um sumir de estalo e o outro aparecer no lugar. */}
+              <Recolhivel aberto={editando === c.id}>
                 <div className="rounded-xl border border-tinta/12 bg-creme p-4">
                   <Formulario cat={c} aoFechar={() => setEditando(null)} />
                 </div>
-              ) : (
+              </Recolhivel>
+
+              <Recolhivel aberto={editando !== c.id}>
                 <div className="flex items-center gap-3 rounded-xl border border-tinta/10 bg-creme-alto p-3">
                   <div className="min-w-0 flex-1">
                     <p className="flex flex-wrap items-center gap-2 font-medium text-cacau">
@@ -132,7 +136,7 @@ export function Categorias({ categorias }: { categorias: Cat[] }) {
                     <Excluir />
                   </form>
                 </div>
-              )}
+              </Recolhivel>
             </>
           )}
         </ListaOrdenavel>

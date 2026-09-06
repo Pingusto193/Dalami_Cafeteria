@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { Aviso, Campo, Cartao, Excluir, Interruptor, Salvar } from "../componentes";
+import { Aviso, Campo, Cartao, Excluir, Interruptor, Recolhivel, Salvar } from "../componentes";
 import { apagarCanal, apagarRede, salvarCanal, salvarRede } from "../acoes-conteudo";
 import { ListaOrdenavel } from "../ordenavel";
 import { reordenar } from "../acoes-ordem";
@@ -88,11 +88,9 @@ function Lista({
       <Aviso resultado={salvo} />
       <Aviso resultado={apagado} />
 
-      {criando && (
-        <div className="mt-5">
-          <Formulario />
-        </div>
-      )}
+      <Recolhivel aberto={criando} className="mt-5">
+        <Formulario />
+      </Recolhivel>
 
       {itens.length === 0 && !criando ? (
         <p className="mt-5 text-sm text-tinta-tenue">Nenhum link cadastrado ainda.</p>
@@ -105,9 +103,13 @@ function Lista({
           >
             {(it) => (
               <>
-                {editando === it.id ? (
+                {/* Os dois lados ficam montados e trocam com animação, em vez
+                    de um sumir de estalo e o outro aparecer no lugar. */}
+                <Recolhivel aberto={editando === it.id}>
                   <Formulario item={it} />
-                ) : (
+                </Recolhivel>
+
+                <Recolhivel aberto={editando !== it.id}>
                   <div className="flex items-center gap-3 rounded-xl border border-tinta/10 bg-creme-alto p-3">
                     <div className="min-w-0 flex-1">
                       <p className="flex flex-wrap items-center gap-2 font-medium text-cacau">
@@ -135,7 +137,7 @@ function Lista({
                       <Excluir />
                     </form>
                   </div>
-                )}
+                </Recolhivel>
               </>
             )}
           </ListaOrdenavel>

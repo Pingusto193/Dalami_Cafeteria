@@ -9,6 +9,7 @@ import {
   EscolherImagem,
   Excluir,
   Interruptor,
+  Recolhivel,
   Salvar,
   type ImagemDisponivel,
 } from "../componentes";
@@ -119,11 +120,11 @@ export function PainelSobre({
 
       <Aviso resultado={apagado} />
 
-      {criando && (
+      <Recolhivel aberto={criando}>
         <Cartao>
           <Formulario imagens={imagens} aoFechar={() => setCriando(false)} />
         </Cartao>
-      )}
+      </Recolhivel>
 
       {blocos.length === 0 && !criando ? (
         <Cartao>
@@ -139,14 +140,18 @@ export function PainelSobre({
         >
           {(b, i) => (
             <Cartao>
-              {editando === b.id ? (
+              {/* Os dois lados ficam montados e trocam com animação, em vez de
+                  um sumir de estalo e o outro aparecer no lugar. */}
+              <Recolhivel aberto={editando === b.id}>
                 <Formulario
                   bloco={b}
                   imagens={imagens}
                   posicao={i}
                   aoFechar={() => setEditando(null)}
                 />
-              ) : (
+              </Recolhivel>
+
+              <Recolhivel aberto={editando !== b.id}>
                 <div className="flex items-start gap-4">
                   <div className="min-w-0 flex-1">
                     <p className="flex flex-wrap items-center gap-2 font-display text-lg font-semibold text-cacau">
@@ -182,7 +187,7 @@ export function PainelSobre({
                     </form>
                   </div>
                 </div>
-              )}
+              </Recolhivel>
             </Cartao>
           )}
         </ListaOrdenavel>

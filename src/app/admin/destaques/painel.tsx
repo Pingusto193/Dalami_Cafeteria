@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useActionState, useState } from "react";
-import { Aviso, Cartao, Excluir, Interruptor, Salvar, Selecao } from "../componentes";
+import { Aviso, Cartao, Excluir, Interruptor, Recolhivel, Salvar, Selecao } from "../componentes";
 import { ListaOrdenavel } from "../ordenavel";
 import { reordenar } from "../acoes-ordem";
 import { apagarDestaque, salvarDestaque } from "../acoes-conteudo";
@@ -55,8 +55,8 @@ export function PainelDestaques({
         <Aviso resultado={apagado} />
         <Aviso resultado={editado} />
 
-        {criando && (
-          <form action={acaoNovo} className="mt-5 space-y-4 rounded-xl border border-tinta/12 bg-creme p-4">
+        <Recolhivel aberto={criando} className="mt-5">
+          <form action={acaoNovo} className="space-y-4 rounded-xl border border-tinta/12 bg-creme p-4">
             <Selecao
               nome="produto"
               rotulo="Qual item do cardápio"
@@ -75,7 +75,7 @@ export function PainelDestaques({
               </button>
             </div>
           </form>
-        )}
+        </Recolhivel>
 
         {destaques.length === 0 ? (
           <p className="mt-5 text-sm text-tinta-tenue">
