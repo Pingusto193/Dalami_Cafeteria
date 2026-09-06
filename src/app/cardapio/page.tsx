@@ -196,27 +196,9 @@ export default async function Cardapio() {
           );
         })}
 
-        {/* Chamada de compra, uma vez, no fim. Repetir por categoria vira ruído. */}
-        {canal && (
-          <section className="px-5 py-14">
-            <Revela className="mx-auto max-w-6xl rounded-[2rem] bg-oliva px-6 py-12 text-center sm:px-14">
-              <h2 className="mx-auto max-w-[20ch] font-display text-[clamp(1.6rem,4vw,2.4rem)] leading-tight font-semibold text-creme-alto">
-                Peça sem sair de casa
-              </h2>
-              <a
-                href={canal.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn mt-7 inline-flex rounded-full bg-creme-alto px-8 py-4 font-medium text-oliva transition-transform hover:scale-[1.02]"
-              >
-                Comprar no {canal.nome}
-              </a>
-              <p className="mt-5 text-sm text-creme/70">
-                Ou passe na loja. {config?.locationRegion ?? ""}
-              </p>
-            </Revela>
-          </section>
-        )}
+        {/* Sem chamada de compra no fim: o botão "Comprar no iFood" já fica
+            fixo no topo, visível o tempo todo enquanto a pessoa rola o
+            cardápio. Um bloco gigante repetindo a mesma ação era só peso. */}
       </main>
 
       <Rodape footerText={config?.footerText ?? null} />
