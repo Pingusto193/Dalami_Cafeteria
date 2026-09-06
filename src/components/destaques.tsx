@@ -44,10 +44,6 @@ export function Destaques({ destaques }: { destaques: DestaqueView[] }) {
     setAtual((i) => (i + 1) % destaques.length);
   }, [destaques.length]);
 
-  const voltar = useCallback(() => {
-    setAtual((i) => (i - 1 + destaques.length) % destaques.length);
-  }, [destaques.length]);
-
   useEffect(() => {
     if (destaques.length < 2 || pausado || semMovimento) return;
     const id = setInterval(avancar, INTERVALO_MS);
@@ -117,7 +113,10 @@ export function Destaques({ destaques }: { destaques: DestaqueView[] }) {
             </Link>
           </div>
 
-          {/* --- Controles, agrupados num lugar só --------------------- */}
+          {/* --- Controles -----------------------------------------------
+              Só as barras. Elas já servem de botão para pular direto para um
+              destaque, então as setas eram um segundo jeito de fazer a mesma
+              coisa ocupando espaço. */}
           {varios && (
             <div className="mt-9 flex items-center gap-4">
               <div className="flex items-center gap-1.5">
@@ -157,31 +156,6 @@ export function Destaques({ destaques }: { destaques: DestaqueView[] }) {
                     </span>
                   </button>
                 ))}
-              </div>
-
-              <span aria-hidden="true" className="h-5 w-px bg-tinta/15" />
-
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={voltar}
-                  aria-label="Destaque anterior"
-                  className="btn grid size-9 place-items-center rounded-full border border-cacau/20 text-cacau transition-colors hover:border-cacau/50 hover:bg-cacau/5"
-                >
-                  <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                    <path d="M15 5l-7 7 7 7" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </button>
-                <button
-                  type="button"
-                  onClick={avancar}
-                  aria-label="Próximo destaque"
-                  className="btn grid size-9 place-items-center rounded-full border border-cacau/20 text-cacau transition-colors hover:border-cacau/50 hover:bg-cacau/5"
-                >
-                  <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                    <path d="M9 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </button>
               </div>
             </div>
           )}

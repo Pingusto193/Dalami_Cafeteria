@@ -160,6 +160,176 @@ h3 {
 }
 
 /* ===========================================================================
+   ABERTURA
+
+   A cortina que aparece ao abrir o site, com a marca no meio, e sai sozinha.
+
+   É CSS puro de propósito. Se dependesse de JavaScript, o conteúdo apareceria
+   por um instante antes da cortina montar, e o efeito viraria um piscar feio.
+   Sendo CSS, ela já vem pintada no primeiro quadro.
+
+   `pointer-events: none` desde o início: quem chega com pressa consegue
+   clicar através dela sem esperar a animação terminar.
+   =========================================================================== */
+
+.abertura {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  background-color: var(--color-creme-fundo);
+  pointer-events: none;
+  animation: abertura-sai 2s var(--ease-suave) forwards;
+}
+
+@keyframes abertura-sai {
+  0%,
+  62% {
+    opacity: 1;
+    visibility: visible;
+  }
+  100% {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+.abertura-nome {
+  animation: abertura-entra 1s var(--ease-suave) both;
+}
+
+.abertura-tipo {
+  animation: abertura-entra 1s var(--ease-suave) 0.18s both;
+}
+
+@keyframes abertura-entra {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* A fita da marca, desenhada da esquerda para a direita. */
+.abertura-fita {
+  transform-origin: left;
+  animation: abertura-fita 0.9s var(--ease-suave) 0.42s both;
+}
+
+@keyframes abertura-fita {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* ===========================================================================
+   TRANSIÇÃO ENTRE PÁGINAS
+
+   Uma cortina que já entra cobrindo e sai revelando a página nova. O sorteio
+   de qual sai é feito em JS, e nunca repete a anterior, então apertar o mesmo
+   botão duas vezes dá efeitos diferentes.
+
+   Todas as variantes animam só transform, opacity ou clip-path.
+   =========================================================================== */
+
+.transicao {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  pointer-events: none;
+  background-color: var(--color-cacau);
+}
+
+.transicao-cima {
+  animation: t-cima 0.7s var(--ease-saida) forwards;
+}
+.transicao-baixo {
+  animation: t-baixo 0.7s var(--ease-saida) forwards;
+}
+.transicao-esquerda {
+  animation: t-esquerda 0.7s var(--ease-saida) forwards;
+}
+.transicao-direita {
+  animation: t-direita 0.7s var(--ease-saida) forwards;
+}
+.transicao-circulo {
+  animation: t-circulo 0.8s var(--ease-suave) forwards;
+}
+.transicao-zoom {
+  animation: t-zoom 0.7s var(--ease-suave) forwards;
+}
+
+@keyframes t-cima {
+  to {
+    transform: translateY(-100%);
+  }
+}
+@keyframes t-baixo {
+  to {
+    transform: translateY(100%);
+  }
+}
+@keyframes t-esquerda {
+  to {
+    transform: translateX(-100%);
+  }
+}
+@keyframes t-direita {
+  to {
+    transform: translateX(100%);
+  }
+}
+@keyframes t-circulo {
+  from {
+    clip-path: circle(140% at 50% 50%);
+  }
+  to {
+    clip-path: circle(0% at 50% 50%);
+  }
+}
+@keyframes t-zoom {
+  from {
+    transform: scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: scale(1.25);
+    opacity: 0;
+  }
+}
+
+/* Persianas: cinco faixas que sobem em sequência. */
+.transicao-persianas {
+  background-color: transparent;
+  display: flex;
+}
+
+.transicao-persianas > span {
+  flex: 1;
+  background-color: var(--color-cacau);
+  animation: t-cima 0.62s var(--ease-saida) forwards;
+}
+.transicao-persianas > span:nth-child(2) {
+  animation-delay: 0.07s;
+}
+.transicao-persianas > span:nth-child(3) {
+  animation-delay: 0.14s;
+}
+.transicao-persianas > span:nth-child(4) {
+  animation-delay: 0.21s;
+}
+.transicao-persianas > span:nth-child(5) {
+  animation-delay: 0.28s;
+}
+
+/* ===========================================================================
    BARRA DE PROGRESSO DO CARROSSEL
 
    Enche da esquerda para a direita no mesmo tempo do avanço automático, para
