@@ -1,0 +1,276 @@
+// Schema do site + painel administrativo da Dalami Confeitaria e Cafeteria.
+//
+// Princípio central: o admin edita CONTEÚDO dentro de campos pré-definidos.
+// Não existe campo de HTML livre nem de posicionamento arbitrário — por isso
+// SiteSection controla o que aparece na home e em que ordem, em vez de deixar
+// o admin montar a página.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================================================
+// MÍDIA
+// ============================================================================
+
+/// Guarda SOMENTE metadados. O arquivo binário nunca entra no Postgres — ele
+/// vive no storage (disco local em dev; Cloudinary/S3/R2 em produção).
+/// `sizeBytes` é o tamanho do arquivo JÁ OTIMIZADO, não o do original enviado:
+/// serve como sinal de saúde da pipeline de compressão.
+model Media {
+  id           String   @id @default(cuid())
+  url          String
+  /// Texto alternativo — obrigatório por acessibilidade.
+  altText      String
+  width        Int
+  height       Int
+  sizeBytes    Int
+  /// Rótulo livre de onde a imagem é usada: "product", "hero", "logo", ...
+  usageContext String   @default("product")
+  createdAt    DateTime @default(now())
+
+  categories      Category[]
+  products        Product[]
+  highlights      Highlight[]
+  contentBlocks   ContentBlock[]
+  settingsLogo    SiteSettings[] @relation("SettingsLogo")
+  settingsFavicon SiteSettings[] @relation("SettingsFavicon")
+  settingsSeo     SiteSettings[] @relation("SettingsSeo")
+
+  @@index([usageContext])
+  @@index([createdAt])
+}
+
+// ============================================================================
+// CARDÁPIO
+// ============================================================================
+
+model Category {
+  id          String  @id @default(cuid())
+  name        String
+  slug        String  @unique
+  description String?
+  mediaId     String?
+  order       Int     @default(0)
+  active      Boolean @default(true)
+  /// "unidade" para bolos; "cento" para a linha de brigadeiros.
+  unitType    String  @default("unidade")
+  /// Regras de encomenda exibidas na categoria (texto rico sanitizado no servidor).
+  /// Ex.: "Pedidos com 2 dias de antecedência, sinal de 50%, retirada na loja."
+  orderingNote String?
+
+  /// Permite que uma categoria de encomenda aponte para o WhatsApp enquanto
+  /// outra (ex.: consumo imediato) aponte para o iFood. Se nulo, o site usa o
+  /// canal padrão. Nada de hardcode de "só existe WhatsApp".
+  preferredOrderChannelId String?
+
+  media                 Media?        @relation(fields: [mediaId], references: [id], onDelete: SetNull)
+  preferredOrderChannel OrderChannel? @relation(fields: [preferredOrderChannelId], references: [id], onDelete: SetNull)
+  products              Product[]
+
+  @@index([order])
+  @@index([active])
+}
+
+/// Não tem campo de preço: todo produto tem 1+ ProductVariant, mesmo quando é
+/// de tamanho único (nesse caso, uma variante rotulada "Único").
+model Product {
+  id          String   @id @default(cuid())
+  categoryId  String
+  name        String
+  slug        String   @unique
+  description String?
+  mediaId     String?
+  featured    Boolean  @default(false)
+  available   Boolean  @default(true)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  /// Restrict: apagar uma categoria que ainda tem produtos deve FALHAR com uma
+  /// mensagem clara no admin, nunca apagar os produtos em silêncio.
+  category   Category         @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  media      Media?           @relation(fields: [mediaId], references: [id], onDelete: SetNull)
+  variants   ProductVariant[]
+  highlights Highlight[]
+
+  @@index([categoryId, order])
+  @@index([featured])
+  @@index([available])
+}
+
+/// Os tamanhos reais do cardápio: P (17cm, 10-12 fatias), M (20cm, 22-25),
+/// G (25cm, 40-45), GG (30x20cm quadrado, 65-70). Cheesecake usa "Único".
+model ProductVariant {
+  id            String    @id @default(cuid())
+  productId     String
+  /// "P" | "M" | "G" | "GG" | "Único" — rótulo livre, não é enum, porque o
+  /// cardápio real pode ganhar outros formatos (ex.: "Meio cento").
+  label         String
+  /// Decimal, nunca Float: preço em dinheiro não pode sofrer erro de ponto flutuante.
+  price         Decimal   @db.Decimal(10, 2)
+  promoPrice    Decimal?  @db.Decimal(10, 2)
+  promoStartsAt DateTime?
+  promoEndsAt   DateTime?
+  /// Ex.: "10 a 12 fatias"
+  servingsInfo  String?
+  order         Int       @default(0)
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, label])
+  @@index([productId, order])
+}
+
+// ============================================================================
+// CONTEÚDO DA HOME
+// ============================================================================
+
+enum HighlightKind {
+  product
+  custom_image
+  custom_content
+}
+
+/// Um destaque aponta para um Product OU carrega conteúdo próprio — NUNCA os
+/// dois. A regra é garantida em três camadas: enum `kind`, refine do Zod no
+/// servidor, e um CHECK constraint adicionado na migração.
+model Highlight {
+  id            String        @id @default(cuid())
+  kind          HighlightKind
+  productId     String?
+  mediaId       String?
+  customTitle   String?
+  customText    String?
+  customLinkUrl String?
+  order         Int           @default(0)
+  active        Boolean       @default(true)
+  startsAt      DateTime?
+  endsAt        DateTime?
+
+  product Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
+  media   Media?   @relation(fields: [mediaId], references: [id], onDelete: SetNull)
+
+  @@index([order])
+  @@index([active])
+}
+
+/// Blocos institucionais editáveis (ex.: "about-hero"). `body` é texto rico
+/// LIMITADO (negrito, itálico, listas, links) e sanitizado NO SERVIDOR antes
+/// de salvar — nunca HTML bruto vindo do cliente.
+model ContentBlock {
+  id      String  @id @default(cuid())
+  key     String  @unique
+  title   String?
+  body    String?
+  mediaId String?
+  order   Int     @default(0)
+  visible Boolean @default(true)
+
+  media Media? @relation(fields: [mediaId], references: [id], onDelete: SetNull)
+
+  @@index([order])
+}
+
+/// Controla QUAIS seções aparecem na home e em QUE ORDEM.
+/// Chaves: "highlights" | "about" | "menu-cta" | "contact" | "hours".
+/// É o mecanismo que dá liberdade ao admin sem risco de quebrar o layout.
+model SiteSection {
+  id      String  @id @default(cuid())
+  key     String  @unique
+  visible Boolean @default(true)
+  order   Int     @default(0)
+
+  @@index([order])
+}
+
+// ============================================================================
+// CONFIGURAÇÕES DO SITE
+// ============================================================================
+
+/// Singleton: existe exatamente UMA linha, com id fixo "singleton".
+model SiteSettings {
+  id              String  @id @default("singleton")
+  siteName        String  @default("Dalami Confeitaria e Cafeteria")
+  logoMediaId     String?
+  faviconMediaId  String?
+  seoTitle        String?
+  seoDescription  String?
+  seoImageMediaId String?
+  footerText      String?
+
+  logoMedia     Media? @relation("SettingsLogo", fields: [logoMediaId], references: [id], onDelete: SetNull)
+  faviconMedia  Media? @relation("SettingsFavicon", fields: [faviconMediaId], references: [id], onDelete: SetNull)
+  seoImageMedia Media? @relation("SettingsSeo", fields: [seoImageMediaId], references: [id], onDelete: SetNull)
+}
+
+/// Lista aberta — sem colunas fixas por rede social.
+model SocialLink {
+  id       String  @id @default(cuid())
+  platform String
+  url      String
+  icon     String?
+  order    Int     @default(0)
+  active   Boolean @default(true)
+
+  @@index([order])
+  @@index([active])
+}
+
+/// Lista aberta de canais de pedido (WhatsApp, iFood, ...). O site nunca faz
+/// checkout próprio: o botão "Encomendar" leva para o canal externo.
+model OrderChannel {
+  id         String  @id @default(cuid())
+  name       String
+  type       String
+  urlOrPhone String
+  icon       String?
+  order      Int     @default(0)
+  active     Boolean @default(true)
+
+  categories Category[]
+
+  @@index([order])
+  @@index([active])
+}
+
+// ============================================================================
+// HORÁRIOS
+// ============================================================================
+
+/// Horário semanal. `periodOrder` permite mais de um período no mesmo dia
+/// (ex.: 08:00-12:00 e 14:00-18:00).
+///
+/// opensAt/closesAt são String "HH:MM" de propósito: um tipo Time do Postgres
+/// carregaria semântica de timezone e o cálculo de "ABERTO agora" precisa ser
+/// feito no fuso America/Sao_Paulo, não no fuso do servidor.
+model BusinessHours {
+  id          String  @id @default(cuid())
+  /// 0 = domingo ... 6 = sábado
+  dayOfWeek   Int
+  opensAt     String?
+  closesAt    String?
+  periodOrder Int     @default(0)
+  closed      Boolean @default(false)
+
+  @@unique([dayOfWeek, periodOrder])
+  @@index([dayOfWeek])
+}
+
+/// Exceções pontuais (feriados). Sobrepõem o BusinessHours daquela data.
+model SpecialHours {
+  id       String   @id @default(cuid())
+  date     DateTime @unique @db.Date
+  opensAt  String?
+  closesAt String?
+  closed   Boolean  @default(true)
+  /// Ex.: "Feriado - Natal"
+  label    String?
+
+  @@index([date])
+}

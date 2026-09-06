@@ -12,6 +12,7 @@ next-env.d.ts
 # Prisma — client gerado (nunca versionar, é recriado por `prisma generate`)
 /generated/
 /prisma/generated/
+/src/generated/
 
 # variáveis de ambiente — nunca versionar segredos
 .env
@@ -40,3 +41,6 @@ desktop.ini
 
 # deploy
 .vercel
+
+# pacote da skill Site de 10K, ferramenta de apoio e nao codigo do projeto
+site-de-10k - Copia/

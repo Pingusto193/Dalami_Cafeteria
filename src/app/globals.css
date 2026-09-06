@@ -1,0 +1,209 @@
+@import "tailwindcss";
+
+/* ===========================================================================
+   TOKENS DA MARCA
+
+   A paleta veio da arte que o cliente enviou e se confirma nas fotos da loja:
+   a marcenaria é verde oliva, os medalhões e as fitas dos bolos são dourados,
+   as bancadas são madeira clara. Não é um tema genérico, é o lugar.
+
+   Trocar a marca inteira é trocar estes valores. Nenhuma cor aparece
+   escrita à mão em componente nenhum.
+   =========================================================================== */
+
+@theme {
+  /* --- Cores da marca ---------------------------------------------------- */
+  --color-oliva: #485329;
+  --color-oliva-claro: #5c6b36;
+  --color-oliva-escuro: #333c1d;
+
+  --color-cacau: #542201;
+  --color-cacau-claro: #6d3410;
+
+  --color-terracota: #935330;
+  --color-terracota-claro: #b06a42;
+
+  /* A tela nunca é branco puro. */
+  --color-creme: #f7f3f0;
+  --color-creme-fundo: #f1eae4;
+  --color-creme-alto: #fdfbfa;
+
+  /* O texto nunca é preto puro: quase-preto quente. */
+  --color-tinta: #423b35;
+  --color-tinta-suave: #6b6058;
+  --color-tinta-tenue: #948a80;
+
+  /* Dourado das fitas e medalhões. Usado em doses raras, nunca como fundo. */
+  --color-dourado: #b8933f;
+  --color-dourado-claro: #d4b567;
+
+  /* --- Tipografia --------------------------------------------------------
+     Display com personalidade real (nunca Inter nem Roboto como display),
+     texto quieto, mono só para rótulos pequenos.
+     As três são carregadas em layout.tsx via next/font e expostas aqui.
+     Trocar a tipografia da marca é trocar estas três linhas.              */
+  --font-display: var(--fonte-display), "Iowan Old Style", Georgia, serif;
+  --font-texto: var(--fonte-texto), ui-sans-serif, system-ui, sans-serif;
+  --font-rotulo: var(--fonte-rotulo), ui-monospace, "SF Mono", monospace;
+
+  /* --- Movimento ---------------------------------------------------------
+     Duas curvas, usadas em tudo. Nada estala.                             */
+  --ease-suave: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-saida: cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+/* ===========================================================================
+   BASE
+   =========================================================================== */
+
+/* `hidden` primeiro como recuo; `clip` é o que realmente impede a página de
+   ser empurrada de lado por um link de âncora ou uma decoração larga. */
+html,
+body {
+  overflow-x: hidden;
+  overflow-x: clip;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--color-creme-fundo);
+  color: var(--color-tinta);
+  font-family: var(--font-texto);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+}
+
+/* Foco visível no acento, nunca removido. */
+:focus-visible {
+  outline: 2px solid var(--color-terracota);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* Alvos de toque de 44px em telas de dedo, sem quebrar o alinhamento:
+   ao trocar o display é obrigatório redeclarar o alinhamento, senão rótulos
+   de botão encostam à esquerda. */
+@media (pointer: coarse) {
+  .btn {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+/* ===========================================================================
+   AMBIENTE
+
+   Uma camada fixa atrás de tudo, com deriva muito lenta. Faz rolar parecer
+   atravessar um lugar em vez de passar por seções empilhadas.
+   =========================================================================== */
+
+.ambiente {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      ellipse 70% 50% at 15% 0%,
+      color-mix(in srgb, var(--color-oliva) 9%, transparent),
+      transparent 60%
+    ),
+    radial-gradient(
+      ellipse 60% 45% at 85% 100%,
+      color-mix(in srgb, var(--color-terracota) 8%, transparent),
+      transparent 60%
+    );
+  animation: derivar 90s var(--ease-suave) infinite alternate;
+  animation-delay: -30s;
+}
+
+@keyframes derivar {
+  from {
+    transform: translate3d(-1.5%, -1%, 0) scale(1.04);
+  }
+  to {
+    transform: translate3d(1.5%, 1%, 0) scale(1.08);
+  }
+}
+
+/* ===========================================================================
+   ENTRADAS
+
+   IntersectionObserver acrescenta .dentro no contêiner. Os estados inicial e
+   final levam o prefixo da classe do contêiner para vencerem a cascata: uma
+   regra posterior sem o prefixo cancelaria a animação em silêncio.
+   =========================================================================== */
+
+.revela > * {
+  opacity: 0;
+  transform: translateY(18px);
+  transition:
+    opacity 0.7s var(--ease-suave),
+    transform 0.7s var(--ease-suave);
+}
+
+.revela.dentro > * {
+  opacity: 1;
+  transform: none;
+}
+
+.revela.dentro > *:nth-child(2) {
+  transition-delay: 90ms;
+}
+.revela.dentro > *:nth-child(3) {
+  transition-delay: 180ms;
+}
+.revela.dentro > *:nth-child(4) {
+  transition-delay: 270ms;
+}
+.revela.dentro > *:nth-child(5) {
+  transition-delay: 360ms;
+}
+
+/* Aposenta o escalonamento depois que a entrada termina, senão todo hover nos
+   irmãos posteriores herda o atraso para sempre. A especificidade precisa
+   igualar as regras nth-child acima (`:nth-child` conta como classe). */
+.revela.assentada.dentro > *:nth-child(n) {
+  transition-delay: 0ms;
+}
+
+/* ===========================================================================
+   MOVIMENTO REDUZIDO
+
+   Honrado por completo: elementos, pseudo-elementos e atrasos.
+   =========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .revela > * {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Pausa toda animação em aba escondida. `animation-play-state` não é herdada,
+   por isso a regra precisa alcançar os pseudo-elementos explicitamente. */
+body.pausado *,
+body.pausado *::before,
+body.pausado *::after {
+  animation-play-state: paused !important;
+}
