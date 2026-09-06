@@ -56,7 +56,7 @@ export default async function Cardapio() {
 
   return (
     <>
-      <Cabecalho canal={canal} />
+      <Cabecalho canal={canal} whatsapp={rodape.whatsapp} />
 
       <main id="conteudo">
         <section className="px-5 pt-14 pb-10 lg:pt-20">

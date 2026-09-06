@@ -31,6 +31,25 @@ export default async function Home() {
   const canal = rodape.canais[0] ?? null;
   const config = rodape.config;
 
+  // Texto de cada seção vem do banco. O segundo argumento é o recuo: se o
+  // dono apagar o campo, a seção mostra isto em vez de ficar com um buraco.
+  const secaoPorChave = new Map(secoes.map((s) => [s.chave, s]));
+  const etiqueta = (chave: string, recuo: string) =>
+    secaoPorChave.get(chave)?.etiqueta || recuo;
+  const titulo = (chave: string, recuo: string) =>
+    secaoPorChave.get(chave)?.titulo || recuo;
+
+  /**
+   * Link para o Google Maps a partir do endereço escrito no painel.
+   *
+   * Usa a busca por texto de propósito, e não coordenadas: o dono digita o
+   * endereço como quem escreve para um amigo, e não precisa saber o que é
+   * latitude. Sem endereço preenchido, a seção mostra só o bairro, sem link.
+   */
+  const linkDoMapa = config?.addressFull
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(config.addressFull)}`
+    : null;
+
   // Cada seção da home é uma peça fechada. O admin liga, desliga e reordena
   // pela tabela SiteSection, mas o layout interno de cada uma é fixo aqui,
   // então não existe caminho para quebrar a página pelo painel.
@@ -42,10 +61,10 @@ export default async function Home() {
       <section key="menu-cta" id="cardapio-cta" className="scroll-mt-24 px-5 py-16 lg:py-24">
         <Revela className="mx-auto max-w-6xl">
           <p className="font-rotulo text-[0.66rem] uppercase tracking-[0.32em] text-terracota">
-            Cardápio
+            {etiqueta("menu-cta", "Cardápio")}
           </p>
           <h2 className="mt-3 max-w-[16ch] font-display text-[clamp(2rem,5vw,3.2rem)] leading-[1.05] font-semibold text-cacau">
-            Café, doce e salgado no mesmo balcão
+            {titulo("menu-cta", "O que tem na vitrine")}
           </h2>
 
           <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -86,7 +105,7 @@ export default async function Home() {
       <section key="order-cta" id="encomenda" className="scroll-mt-24 px-5 py-4">
         <Revela className="mx-auto max-w-6xl overflow-hidden rounded-[2rem] bg-terracota px-6 py-14 text-center sm:px-14">
           <p className="font-rotulo text-[0.66rem] uppercase tracking-[0.32em] text-creme/75">
-            Para uma data especial
+            {etiqueta("order-cta", "Para uma data especial")}
           </p>
           <h2 className="mx-auto mt-3 max-w-[20ch] font-display text-[clamp(1.9rem,4.6vw,2.9rem)] leading-tight font-semibold text-creme-alto">
             {encomenda.titulo}
@@ -141,7 +160,7 @@ export default async function Home() {
                   <div className={imagemNaDireita ? "lg:order-1" : "lg:order-2"}>
                     {i === 0 && (
                       <p className="font-rotulo text-[0.66rem] uppercase tracking-[0.32em] text-terracota">
-                        Sobre a casa
+                        {etiqueta("about", "Sobre a casa")}
                       </p>
                     )}
                     {bloco.titulo && (
@@ -172,11 +191,27 @@ export default async function Home() {
               abaixo já responde isso, e repetir na mesma rolagem é ruído. */}
           <Revela className="mx-auto max-w-6xl">
             <p className="font-rotulo text-[0.66rem] uppercase tracking-[0.32em] text-dourado-claro">
-              Onde estamos
+              {etiqueta("location", "Onde estamos")}
             </p>
-            <p className="mt-4 font-display text-[clamp(1.7rem,4vw,2.6rem)] leading-tight font-semibold">
-              {config.locationRegion}
-            </p>
+            {linkDoMapa ? (
+              <a
+                href={linkDoMapa}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-4 inline-flex items-start gap-2.5 font-display text-[clamp(1.7rem,4vw,2.6rem)] leading-tight font-semibold underline decoration-dourado-claro/40 decoration-2 underline-offset-8 transition-colors hover:decoration-dourado-claro"
+              >
+                {config.locationRegion}
+                <svg viewBox="0 0 24 24" className="mt-2 size-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                  <path d="M12 21s-7-5.5-7-11a7 7 0 1114 0c0 5.5-7 11-7 11z" strokeLinecap="round" strokeLinejoin="round" />
+                  <circle cx="12" cy="10" r="2.5" />
+                </svg>
+                <span className="sr-only">Abrir no Google Maps</span>
+              </a>
+            ) : (
+              <p className="mt-4 font-display text-[clamp(1.7rem,4vw,2.6rem)] leading-tight font-semibold">
+                {config.locationRegion}
+              </p>
+            )}
             {config.locationNote && (
               <p className="mt-3 max-w-[46ch] text-[1.05rem] text-creme/80">
                 {config.locationNote}
@@ -192,10 +227,10 @@ export default async function Home() {
         <Revela className="mx-auto grid max-w-6xl gap-8 lg:grid-cols-[auto_1fr] lg:gap-20">
           <div>
             <p className="font-rotulo text-[0.66rem] uppercase tracking-[0.32em] text-terracota">
-              Horário
+              {etiqueta("hours", "Horário")}
             </p>
             <h2 className="mt-3 font-display text-[clamp(1.7rem,4vw,2.4rem)] font-semibold text-cacau">
-              Quando abrimos
+              {titulo("hours", "Quando abrimos")}
             </h2>
             <div className="mt-5">
               <StatusHorario periodos={rodape.horarios} excecoes={rodape.excecoes} />
@@ -211,10 +246,10 @@ export default async function Home() {
       <section key="contact" id="contato" className="scroll-mt-24 border-t border-tinta/10 px-5 py-16 lg:py-20">
         <Revela className="mx-auto max-w-6xl">
           <p className="font-rotulo text-[0.66rem] uppercase tracking-[0.32em] text-terracota">
-            Contato
+            {etiqueta("contact", "Contato")}
           </p>
           <h2 className="mt-3 font-display text-[clamp(1.7rem,4vw,2.4rem)] font-semibold text-cacau">
-            Fale com a gente
+            {titulo("contact", "Fale com a gente")}
           </h2>
 
           <div className="mt-8 flex flex-wrap gap-3">
@@ -258,7 +293,7 @@ export default async function Home() {
   return (
     <>
       <PausaEmAbaEscondida />
-      <Cabecalho canal={canal} />
+      <Cabecalho canal={canal} whatsapp={rodape.whatsapp} />
       <main id="conteudo">
         {/* Título da página, invisível na tela e presente para busca e leitor
             de tela. O maior texto que aparece é o do destaque, que muda a cada
@@ -269,7 +304,7 @@ export default async function Home() {
           {config?.locationRegion ? ` — ${config.locationRegion}` : ""}
         </h1>
 
-        {secoes.map((chave) => pecas[chave] ?? null)}
+        {secoes.map((s) => pecas[s.chave] ?? null)}
       </main>
       <Rodape footerText={config?.footerText ?? null} />
     </>

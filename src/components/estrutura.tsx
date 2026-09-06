@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { FitaDourada } from "@/components/cliente";
+import { DadosDoGoogle } from "@/components/dados-do-google";
+import { WhatsAppFlutuante } from "@/components/whatsapp-flutuante";
 
 type Canal = { nome: string; url: string; tipo: string } | null;
 
@@ -37,9 +39,13 @@ export function Marca({ claro = false }: { claro?: boolean }) {
  * Sem menu de navegação de propósito. A home já leva para cardápio e encomenda
  * nas próprias seções, e um menu repetindo isso no topo só divide a atenção.
  */
-export function Cabecalho({ canal }: { canal: Canal }) {
+export function Cabecalho({ canal, whatsapp }: { canal: Canal; whatsapp?: string | null }) {
   return (
     <>
+      {/* Dados estruturados e botão flutuante moram aqui porque só as páginas
+          públicas usam o Cabecalho. No painel eles não fazem sentido. */}
+      <DadosDoGoogle />
+      {whatsapp && <WhatsAppFlutuante href={whatsapp} />}
       {/* Abertura da marca. É CSS puro e vem no HTML do servidor, então já
           está pintada no primeiro quadro, sem piscar o conteúdo antes.
           Mora aqui, e não no layout raiz, para não aparecer no painel. */}

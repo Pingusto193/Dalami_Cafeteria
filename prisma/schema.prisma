@@ -167,6 +167,15 @@ model SiteSection {
   visible Boolean @default(true)
   order   Int     @default(0)
 
+  /// A palavrinha pequena em caixa alta acima do título. Ex.: "Cardápio".
+  eyebrow String?
+  /// A frase grande da seção. Ex.: "Café, doce e salgado no mesmo balcão".
+  ///
+  /// Nasceu escrito no código e teve que virar campo: a frase descrevia o
+  /// cardápio, o cardápio mudou, e o site passou a prometer coisa que não
+  /// existia mais. Frase sobre o negócio não pode morar no código.
+  heading String?
+
   @@index([order])
 }
 
@@ -225,6 +234,10 @@ model SiteSettings {
   locationRegion  String?
   /// Ex.: "Venha nos visitar!"
   locationNote    String?
+  /// Endereço completo, usado para montar o link do Google Maps.
+  /// Ex.: "Rua das Gaivotas, 123 - Ingleses, Florianópolis - SC"
+  /// Vazio: a seção de localização mostra só o bairro, sem link.
+  addressFull     String?
 
   logoMedia     Media? @relation("SettingsLogo", fields: [logoMediaId], references: [id], onDelete: SetNull)
   faviconMedia  Media? @relation("SettingsFavicon", fields: [faviconMediaId], references: [id], onDelete: SetNull)

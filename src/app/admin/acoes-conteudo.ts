@@ -408,6 +408,7 @@ export async function salvarSite(_a: Resultado | null, dados: FormData): Promise
       footerText: textoOuNulo(dados.get("frase")),
       locationRegion: textoOuNulo(dados.get("regiao")),
       locationNote: textoOuNulo(dados.get("recado")),
+      addressFull: textoOuNulo(dados.get("endereco")),
       seoTitle: textoOuNulo(dados.get("tituloBusca")),
       seoDescription: textoOuNulo(dados.get("descricaoBusca")),
       logoMediaId: textoOuNulo(dados.get("logo")),
@@ -421,6 +422,73 @@ export async function salvarSite(_a: Resultado | null, dados: FormData): Promise
       create: { id: "singleton", ...campos },
     });
   }, "Dados do site salvos.");
+}
+
+/** Salva a palavrinha de cima e a frase grande de uma seção da home. */
+export async function salvarTextoDaSecao(
+  _a: Resultado | null,
+  dados: FormData,
+): Promise<Resultado> {
+  return acaoDoAdmin(async () => {
+    await prisma.siteSection.update({
+      where: { key: texto(dados.get("chave")) },
+      data: {
+        eyebrow: textoOuNulo(dados.get("etiqueta")),
+        heading: textoOuNulo(dados.get("titulo")),
+      },
+    });
+  }, "Texto da seção salvo.");
+}
+
+/* ==========================================================================
+   FERIADOS E FECHAMENTO PONTUAL
+   ========================================================================== */
+
+export async function salvarFeriado(
+  _a: Resultado | null,
+  dados: FormData,
+): Promise<Resultado> {
+  return acaoDoAdmin(async () => {
+    const dia = texto(dados.get("data"));
+    if (!/^d{4}-d{2}-d{2}$/.test(dia)) throw new Error("Escolha a data.");
+
+    const fechado = ligado(dados.get("fechado"));
+    const abre = texto(dados.get("abre"));
+    const fecha = texto(dados.get("fecha"));
+
+    if (!fechado && (!abre || !fecha)) {
+      throw new Error("Preencha a hora de abrir e a de fechar, ou marque como fechado.");
+    }
+    if (!fechado && abre >= fecha) {
+      throw new Error("A hora de fechar precisa ser depois da de abrir.");
+    }
+
+    // Data pura, sem hora: gravada como meio-dia UTC para que nenhum fuso
+    // consiga empurrar a data para o dia anterior ou seguinte.
+    const data = new Date(`${dia}T12:00:00.000Z`);
+
+    const campos = {
+      closed: fechado,
+      opensAt: fechado ? null : abre,
+      closesAt: fechado ? null : fecha,
+      label: textoOuNulo(dados.get("motivo")),
+    };
+
+    await prisma.specialHours.upsert({
+      where: { date: data },
+      update: campos,
+      create: { date: data, ...campos },
+    });
+  }, "Data especial salva.");
+}
+
+export async function apagarFeriado(
+  _a: Resultado | null,
+  dados: FormData,
+): Promise<Resultado> {
+  return acaoDoAdmin(async () => {
+    await prisma.specialHours.delete({ where: { id: texto(dados.get("id")) } });
+  }, "Data especial removida.");
 }
 
 /** Liga e desliga uma seção da página inicial. */

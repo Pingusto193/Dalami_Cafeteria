@@ -19,6 +19,7 @@ type Dados = {
   frase: string;
   regiao: string;
   recado: string;
+  endereco: string;
   tituloBusca: string;
   descricaoBusca: string;
   logo: ImagemDisponivel | null;
@@ -77,6 +78,13 @@ export function PainelSite({
             valor={dados.recado}
             placeholder="Venha nos visitar."
             dica="Uma frase de convite, logo abaixo do bairro."
+          />
+          <Campo
+            nome="endereco"
+            rotulo="Endereço completo"
+            valor={dados.endereco}
+            placeholder="Rua das Gaivotas, 1000 - Ingleses, Florianópolis - SC"
+            dica="Com este campo preenchido, o bairro no site vira um link que abre o Google Maps. Deixe vazio para mostrar só o bairro, sem link."
           />
         </Cartao>
 

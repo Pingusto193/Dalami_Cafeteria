@@ -186,16 +186,22 @@ export async function buscarEncomenda() {
 
 
 export async function buscarRodape() {
-  const [config, redes, canais, horarios, excecoes] = await Promise.all([
+  const [config, redes, canais, horarios, excecoes, encomenda] = await Promise.all([
     prisma.siteSettings.findUnique({ where: { id: "singleton" } }),
     prisma.socialLink.findMany({ where: { active: true }, orderBy: { order: "asc" } }),
     prisma.orderChannel.findMany({ where: { active: true }, orderBy: { order: "asc" } }),
     prisma.businessHours.findMany({ orderBy: [{ dayOfWeek: "asc" }, { periodOrder: "asc" }] }),
     prisma.specialHours.findMany(),
+    prisma.orderSection.findUnique({ where: { id: "singleton" } }),
   ]);
+
+  // O botão flutuante aparece em todas as páginas, então o número precisa vir
+  // daqui, que é a consulta que todas elas já fazem.
+  const numero = encomenda?.active ? (encomenda.whatsappNumber?.replace(/D/g, "") ?? "") : "";
 
   return {
     config,
+    whatsapp: numero ? `https://wa.me/${numero}` : null,
     redes: redes.map((r) => ({ nome: r.platform, url: r.url })),
     canais: canais.map((c) => ({ nome: c.name, url: c.urlOrPhone, tipo: c.type })),
     horarios: horarios.map((h) => ({
@@ -215,12 +221,26 @@ export async function buscarRodape() {
   };
 }
 
-/** Quais seções da home estão visíveis, já na ordem que o admin definiu. */
-export async function buscarSecoes() {
+export type SecaoView = {
+  chave: string;
+  /** A palavrinha em caixa alta acima do título. */
+  etiqueta: string | null;
+  /** A frase grande da seção. */
+  titulo: string | null;
+};
+
+/**
+ * As seções visíveis da home, na ordem que o admin definiu, já com os textos.
+ *
+ * Os textos vêm do banco justamente para não morarem no código: quando o
+ * cardápio mudou, a frase escrita no código continuou prometendo café e
+ * salgado que não existiam mais, e não havia como corrigir pelo painel.
+ */
+export async function buscarSecoes(): Promise<SecaoView[]> {
   const secoes = await prisma.siteSection.findMany({
     where: { visible: true },
     orderBy: { order: "asc" },
   });
-  return secoes.map((s) => s.key);
+  return secoes.map((s) => ({ chave: s.key, etiqueta: s.eyebrow, titulo: s.heading }));
 }
 

@@ -280,21 +280,24 @@ async function main() {
   // ---------------------------------------------------------------------------
   // Seções da home, na ordem definida no briefing
   // ---------------------------------------------------------------------------
+  // Cada seção guarda a palavrinha de cima e a frase grande. Antes elas
+  // moravam no código, e quando o cardápio mudou a home passou a prometer
+  // "café, doce e salgado" sem ter mais café nem salgado.
   const secoes = [
-    "highlights",
-    "menu-cta",
-    "order-cta",
-    "about",
-    "location",
-    "hours",
-    "contact",
+    { key: "highlights", eyebrow: "Destaque da casa", heading: null },
+    { key: "menu-cta",   eyebrow: "Cardápio",         heading: "Doce feito na casa, todo dia" },
+    { key: "order-cta",  eyebrow: "Para uma data especial", heading: null },
+    { key: "about",      eyebrow: "Sobre a casa",     heading: null },
+    { key: "location",   eyebrow: "Onde estamos",     heading: null },
+    { key: "hours",      eyebrow: "Horário",          heading: "Quando abrimos" },
+    { key: "contact",    eyebrow: "Contato",          heading: "Fale com a gente" },
   ];
 
-  for (const [i, key] of secoes.entries()) {
+  for (const [i, s] of secoes.entries()) {
     await prisma.siteSection.upsert({
-      where: { key },
-      update: {},
-      create: { key, visible: true, order: i },
+      where: { key: s.key },
+      update: { eyebrow: s.eyebrow, heading: s.heading },
+      create: { key: s.key, visible: true, order: i, eyebrow: s.eyebrow, heading: s.heading },
     });
   }
 
@@ -395,8 +398,21 @@ async function main() {
       footerText: "A vida merece ser saboreada.", // REAL
       locationRegion: "Bairro Ingleses, Florianópolis - SC", // PLACEHOLDER
       locationNote: "Venha nos visitar. O café está sempre saindo.", // PLACEHOLDER
+      addressFull: "Rua das Gaivotas, 1000 - Ingleses, Florianópolis - SC", // PLACEHOLDER
     },
   });
+
+  // Campos novos ganham um valor de exemplo só quando ainda estão vazios.
+  // O upsert acima usa `update: {}` de propósito, para não apagar o que o dono
+  // já editou; sem este passo, um campo criado depois nunca seria preenchido.
+  const config = await prisma.siteSettings.findUnique({ where: { id: "singleton" } });
+  if (config && !config.addressFull) {
+    await prisma.siteSettings.update({
+      where: { id: "singleton" },
+      // PLACEHOLDER: endereço de exemplo, para o link do Google Maps funcionar.
+      data: { addressFull: "Rua das Gaivotas, 1000 - Ingleses, Florianópolis - SC" },
+    });
+  }
 
   const total = await prisma.product.count();
   console.log("Pronto.\n");
