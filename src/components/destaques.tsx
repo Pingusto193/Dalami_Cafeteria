@@ -143,6 +143,50 @@ export function Destaques({ destaques }: { destaques: DestaqueView[] }) {
                 >
                   Ver no cardápio
                 </Link>
+
+                {/* Barras de progresso, junto do conteúdo e não soltas no
+                    canto de cima. A do destaque atual enche no tempo do avanço
+                    automático, e pausa junto com ele no hover e no foco. */}
+                {destaques.length > 1 && (
+                  <div className="ml-auto flex items-center gap-1.5">
+                    {destaques.map((d, i) => (
+                      <button
+                        key={d.id}
+                        type="button"
+                        onClick={() => setAtual(i)}
+                        aria-label={`Ir para o destaque ${i + 1}: ${d.titulo ?? ""}`}
+                        aria-current={i === atual}
+                        className="btn grid h-7 place-items-center px-0.5"
+                      >
+                        <span
+                          className="relative block h-[3px] overflow-hidden rounded-full bg-creme/30 transition-all duration-500"
+                          style={{ width: i === atual ? "2.4rem" : "0.9rem" }}
+                        >
+                          {i === atual && (
+                            <span
+                              // key={atual} reinicia a animação a cada troca:
+                              // sem isso o React reaproveita o nó e a barra
+                              // continua de onde parou.
+                              key={atual}
+                              className="absolute inset-y-0 left-0 w-full origin-left rounded-full bg-dourado-claro"
+                              style={
+                                semMovimento
+                                  ? { transform: "scaleX(1)" }
+                                  : {
+                                      animation: `encher ${INTERVALO_MS}ms linear forwards`,
+                                      animationPlayState: pausado ? "paused" : "running",
+                                    }
+                              }
+                            />
+                          )}
+                          {i < atual && (
+                            <span className="absolute inset-0 rounded-full bg-dourado-claro/45" />
+                          )}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -172,47 +216,6 @@ export function Destaques({ destaques }: { destaques: DestaqueView[] }) {
                 </svg>
               </button>
 
-              {/* Barras de progresso. A do destaque atual enche no tempo do
-                  avanço automático, para a troca não pegar ninguém de
-                  surpresa. Pausa junto com o carrossel no hover e no foco. */}
-              <div className="absolute top-5 right-5 flex items-center gap-1.5 sm:top-7 sm:right-7">
-                {destaques.map((d, i) => (
-                  <button
-                    key={d.id}
-                    type="button"
-                    onClick={() => setAtual(i)}
-                    aria-label={`Ir para o destaque ${i + 1}: ${d.titulo ?? ""}`}
-                    aria-current={i === atual}
-                    className="btn group/barra grid h-7 place-items-center px-0.5"
-                  >
-                    <span
-                      className="relative block h-[3px] overflow-hidden rounded-full bg-creme/30 transition-all duration-500"
-                      style={{ width: i === atual ? "2.6rem" : "1rem" }}
-                    >
-                      {i === atual && (
-                        <span
-                          // key={atual} reinicia a animação a cada troca:
-                          // sem isso o React reaproveita o nó e a barra
-                          // continua de onde parou.
-                          key={atual}
-                          className="absolute inset-y-0 left-0 w-full origin-left rounded-full bg-dourado-claro"
-                          style={
-                            semMovimento
-                              ? { transform: "scaleX(1)" }
-                              : {
-                                  animation: `encher ${INTERVALO_MS}ms linear forwards`,
-                                  animationPlayState: pausado ? "paused" : "running",
-                                }
-                          }
-                        />
-                      )}
-                      {i < atual && (
-                        <span className="absolute inset-0 rounded-full bg-dourado-claro/45" />
-                      )}
-                    </span>
-                  </button>
-                ))}
-              </div>
             </>
           )}
         </div>
