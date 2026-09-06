@@ -113,8 +113,24 @@ export async function credenciaisConferem(
 
   if (!usuarioEsperado || !hash) {
     throw new Error(
-      "ADMIN_USERNAME ou ADMIN_PASSWORD_HASH não estão definidos no .env. " +
-        "Rode: npm run admin:configurar",
+      "ADMIN_USERNAME ou ADMIN_PASSWORD_HASH não estão definidos no arquivo .env. " +
+        'Rode no terminal: npm run admin:senha "sua senha"',
+    );
+  }
+
+  // Um hash bcrypt sempre começa com $2 e tem 60 caracteres. Se o que está no
+  // .env não tem essa cara, alguém escreveu a senha em texto puro ali, o que é
+  // o engano mais fácil de cometer: o campo se chama HASH mas parece um lugar
+  // para digitar a senha.
+  //
+  // Sem esta checagem o login responderia "usuário ou senha incorretos", que é
+  // mentira: a senha pode estar certa e o problema ser a configuração. Errar a
+  // mensagem aqui manda a pessoa procurar no lugar errado por horas.
+  if (!/^\$2[aby]\$\d{2}\$.{53}$/.test(hash)) {
+    throw new Error(
+      "A senha no arquivo .env não está no formato certo (ela precisa estar " +
+        "embaralhada, não em texto puro). Rode no terminal: " +
+        'npm run admin:senha "sua senha" e reinicie o servidor.',
     );
   }
 
