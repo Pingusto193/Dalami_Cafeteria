@@ -184,16 +184,42 @@ h3 {
 }
 
 /* A marca termina de montar por volta de 1,7s. O bloco fica parado até 72%
-   (uns 2,6s) e só então some, para dar tempo de ler antes de sair. */
+   (uns 2,6s) e só então sai.
+   A saída é a tela inteira se fechando numa bolinha no centro, que encolhe
+   até sumir e revela o site por trás. */
 @keyframes abertura-sai {
   0%,
   72% {
-    opacity: 1;
+    clip-path: circle(150% at 50% 50%);
     visibility: visible;
+    opacity: 1;
+  }
+  97% {
+    clip-path: circle(0% at 50% 50%);
+    opacity: 1;
   }
   100% {
-    opacity: 0;
+    clip-path: circle(0% at 50% 50%);
     visibility: hidden;
+    opacity: 0;
+  }
+}
+
+/* A marca encolhe junto com a bolinha, para os dois virarem um movimento só
+   em vez de o texto ficar parado enquanto o círculo fecha em cima dele. */
+.abertura-conteudo {
+  animation: abertura-junta 3.6s var(--ease-suave) forwards;
+}
+
+@keyframes abertura-junta {
+  0%,
+  72% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.55);
+    opacity: 0;
   }
 }
 
@@ -245,90 +271,55 @@ h3 {
   position: fixed;
   inset: 0;
   z-index: 90;
-  pointer-events: none;
-  background-color: var(--color-cacau);
-}
-
-.transicao-cima {
-  animation: t-cima 0.7s var(--ease-saida) forwards;
-}
-.transicao-baixo {
-  animation: t-baixo 0.7s var(--ease-saida) forwards;
-}
-.transicao-esquerda {
-  animation: t-esquerda 0.7s var(--ease-saida) forwards;
-}
-.transicao-direita {
-  animation: t-direita 0.7s var(--ease-saida) forwards;
-}
-.transicao-circulo {
-  animation: t-circulo 0.8s var(--ease-suave) forwards;
-}
-.transicao-zoom {
-  animation: t-zoom 0.7s var(--ease-suave) forwards;
-}
-
-@keyframes t-cima {
-  to {
-    transform: translateY(-100%);
-  }
-}
-@keyframes t-baixo {
-  to {
-    transform: translateY(100%);
-  }
-}
-@keyframes t-esquerda {
-  to {
-    transform: translateX(-100%);
-  }
-}
-@keyframes t-direita {
-  to {
-    transform: translateX(100%);
-  }
-}
-@keyframes t-circulo {
-  from {
-    clip-path: circle(140% at 50% 50%);
-  }
-  to {
-    clip-path: circle(0% at 50% 50%);
-  }
-}
-@keyframes t-zoom {
-  from {
-    transform: scale(1);
-    opacity: 1;
-  }
-  to {
-    transform: scale(1.25);
-    opacity: 0;
-  }
-}
-
-/* Persianas: cinco faixas que sobem em sequência. */
-.transicao-persianas {
-  background-color: transparent;
   display: flex;
+  pointer-events: none;
 }
 
-.transicao-persianas > span {
+.transicao > span {
   flex: 1;
   background-color: var(--color-cacau);
-  animation: t-cima 0.62s var(--ease-saida) forwards;
+  will-change: transform;
 }
-.transicao-persianas > span:nth-child(2) {
-  animation-delay: 0.07s;
+
+/* FASE 1, cobrir: os três quadros sobem de baixo até fechar a tela.
+   A troca de página só acontece quando esta fase termina.
+
+   `both`, e não `forwards`: sem ele os quadros 2 e 3 apareceriam cobrindo a
+   tela durante o próprio atraso, em vez de esperar embaixo a vez deles. */
+.transicao-cobrindo > span {
+  animation: quadro-cobre 0.55s var(--ease-saida) both;
 }
-.transicao-persianas > span:nth-child(3) {
-  animation-delay: 0.14s;
+
+/* FASE 2, revelar: eles continuam subindo e saem por cima, mostrando a
+   página nova, que a essa altura já está montada por baixo. */
+.transicao-revelando > span {
+  animation: quadro-revela 0.55s var(--ease-saida) both;
 }
-.transicao-persianas > span:nth-child(4) {
-  animation-delay: 0.21s;
+
+@keyframes quadro-cobre {
+  from {
+    transform: translateY(101%);
+  }
+  to {
+    transform: translateY(0);
+  }
 }
-.transicao-persianas > span:nth-child(5) {
-  animation-delay: 0.28s;
+
+@keyframes quadro-revela {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-101%);
+  }
+}
+
+/* O escalonamento é o que faz parecer três quadros e não uma cortina só. */
+.transicao > span:nth-child(2) {
+  animation-delay: 0.09s;
+}
+.transicao > span:nth-child(3) {
+  animation-delay: 0.18s;
 }
 
 /* ===========================================================================

@@ -56,7 +56,7 @@ export default function RootLayout({
         {/* Abertura da marca. É CSS puro e vem no HTML do servidor, então já
             está pintada no primeiro quadro, sem piscar o conteúdo antes. */}
         <div className="abertura" aria-hidden="true">
-          <div className="text-center">
+          <div className="abertura-conteudo text-center">
             <p className="abertura-nome font-display text-[clamp(2.6rem,9vw,4.5rem)] leading-none font-semibold tracking-tight text-cacau">
               Dalami
             </p>
