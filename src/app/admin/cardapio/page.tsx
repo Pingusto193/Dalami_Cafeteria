@@ -17,7 +17,7 @@ export default async function AdminCardapio() {
   return (
     <>
       <Titulo
-        apoio="Aqui você cria as categorias e os itens que aparecem no cardápio do site. Tudo que salvar aparece no site na hora."
+        apoio="Aqui você cria as categorias e os itens que aparecem no cardápio do site. O interruptor de cada item liga e desliga o 'Tem hoje': desligue quando acabar, e o item aparece no site marcado como esgotado. Tudo que salvar aparece no site na hora."
         acao={
           <Link
             href="/admin/cardapio/novo"

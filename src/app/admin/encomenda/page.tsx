@@ -1,23 +1,23 @@
 import { prisma } from "@/lib/prisma";
 import { paraTextoSimples } from "@/lib/admin";
-import { formatarPreco } from "@/lib/formato";
+import { imagensDisponiveis } from "@/lib/midias";
 import { Titulo } from "../componentes";
 import { PainelEncomenda } from "./painel";
 
+/** Mostra o preço no formato que o dono digita: vírgula nos centavos. */
+function paraCampo(valor: unknown): string {
+  return Number(valor).toFixed(2).replace(".", ",");
+}
+
 export default async function AdminEncomenda() {
-  const [secao, itens, produtos] = await Promise.all([
+  const [secao, itens, imagens] = await Promise.all([
     prisma.orderSection.findUnique({ where: { id: "singleton" } }),
     prisma.orderSectionItem.findMany({
       orderBy: { order: "asc" },
-      include: { product: { include: { media: true, category: true } } },
+      include: { product: { include: { media: true } } },
     }),
-    prisma.product.findMany({
-      orderBy: [{ categoryId: "asc" }, { order: "asc" }],
-      include: { category: true },
-    }),
+    imagensDisponiveis(),
   ]);
-
-  const jaNaLista = new Set(itens.map((i) => i.productId));
 
   return (
     <>
@@ -34,15 +34,19 @@ export default async function AdminEncomenda() {
         }}
         itens={itens.map((i) => ({
           id: i.id,
+          produtoId: i.productId,
           nome: i.product.name,
-          categoria: i.product.category.name,
-          preco: formatarPreco(Number(i.product.price)),
-          imagem: i.product.media?.url ?? null,
-          disponivel: i.product.available,
+          descricao: i.product.description ?? "",
+          preco: paraCampo(i.product.price),
+          imagem: i.product.media
+            ? {
+                id: i.product.media.id,
+                url: i.product.media.url,
+                alt: i.product.media.altText,
+              }
+            : null,
         }))}
-        disponiveis={produtos
-          .filter((p) => !jaNaLista.has(p.id))
-          .map((p) => ({ valor: p.id, rotulo: `${p.category.name} · ${p.name}` }))}
+        imagens={imagens}
       />
     </>
   );

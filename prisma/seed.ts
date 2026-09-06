@@ -20,11 +20,12 @@
  *   - as frases de marca "A vida merece ser saboreada" e
  *     "Cada pedaço da vida merece ser saboreado"
  *
- * As fotos são todas de bolos e docinhos, então só os itens de Doces têm
- * imagem. Cafés, Salgados e Combos ficam sem foto de propósito: inventar
- * imagem de café por IA seria pior que um card bem desenhado sem foto.
- * Quando o cliente mandar fotos próprias, elas entram pela biblioteca de
- * mídia do admin, nunca escritas no código.
+ * O exemplo é pequeno de propósito: uma categoria visível (Doces) com quatro
+ * itens, mais dois itens de encomenda. O suficiente para ver o site de pé e
+ * mexer no painel sem cansar, e fácil de apagar quando o cardápio real chegar.
+ *
+ * Quando o cliente mandar as fotos dele, elas entram pela biblioteca de mídia
+ * do painel, nunca escritas no código.
  *
  * O script é idempotente (usa upsert): rodar duas vezes não duplica nada.
  */
@@ -41,8 +42,26 @@ async function main() {
 
   // Limpeza: a categoria Combos saiu do briefing. Removida aqui para quem já
   // tinha rodado a versão anterior do seed não ficar com ela órfã no banco.
-  await prisma.product.deleteMany({ where: { categoryId: "cat-combos" } });
-  await prisma.category.deleteMany({ where: { id: "cat-combos" } });
+  const categoriasQueSairam = ["cat-combos", "cat-cafes", "cat-salgados"];
+  await prisma.product.deleteMany({ where: { categoryId: { in: categoriasQueSairam } } });
+  await prisma.category.deleteMany({ where: { id: { in: categoriasQueSairam } } });
+
+  // Itens que sairam do exemplo para deixar o painel mais enxuto de mexer.
+  await prisma.product.deleteMany({
+    where: {
+      id: {
+        in: [
+          "p-fatia-doce-de-leite",
+          "p-fatia-coco",
+          "p-cheesecake",
+          "e-bolo-morango",
+          "e-bolo-doce-de-leite",
+          "e-bolo-coco",
+          "e-torta-brigadeiro",
+        ],
+      },
+    },
+  });
 
   // ---------------------------------------------------------------------------
   // Mídia
@@ -123,18 +142,14 @@ async function main() {
   // Categorias
   // ---------------------------------------------------------------------------
   const categorias = [
-    { id: "cat-cafes", name: "Cafés", slug: "cafes", order: 0, active: true,
-      description: "Grãos moídos na hora, tirados no balcão." },
-    { id: "cat-doces", name: "Doces", slug: "doces", order: 1, active: true,
+    { id: "cat-doces", name: "Doces", slug: "doces", order: 0, active: true,
       description: "Bolos, tortas e docinhos feitos na confeitaria." },
-    { id: "cat-salgados", name: "Salgados", slug: "salgados", order: 2, active: true,
-      description: "Assados do dia, para acompanhar o café." },
 
     // Categoria INATIVA de propósito: `active: false` tira ela do cardápio do
     // dia a dia. Os itens continuam existindo e aparecem na página /encomenda,
     // porque foram adicionados ao cardápio de encomenda mais abaixo.
     // Bolo inteiro e cento de docinho não ficam na vitrine, mas são vendidos.
-    { id: "cat-encomendas", name: "Encomendas", slug: "encomendas", order: 4, active: false,
+    { id: "cat-encomendas", name: "Encomendas", slug: "encomendas", order: 1, active: false,
       description: "Bolos inteiros e bandejas, feitos sob encomenda." },
   ];
 
@@ -164,21 +179,6 @@ async function main() {
   };
 
   const itens: Item[] = [
-    // --- Cafés -------------------------------------------------------------
-    { id: "p-espresso", categoryId: "cat-cafes", name: "Espresso", slug: "espresso",
-      description: "Curto, encorpado, tirado na hora.", price: "6.50", order: 0 },
-    { id: "p-coado", categoryId: "cat-cafes", name: "Café coado da casa", slug: "cafe-coado-da-casa",
-      description: "Coado no pano, servido em xícara grande.", price: "7.00", order: 1 },
-    { id: "p-cappuccino", categoryId: "cat-cafes", name: "Cappuccino", slug: "cappuccino",
-      description: "Espresso, leite vaporizado e canela por cima.", price: "12.00",
-      featured: true, order: 2 },
-    { id: "p-latte", categoryId: "cat-cafes", name: "Latte", slug: "latte",
-      description: "Mais leite, menos amargor. Vai bem com doce.", price: "13.00", order: 3 },
-    { id: "p-mocha", categoryId: "cat-cafes", name: "Mocha", slug: "mocha",
-      description: "Espresso com chocolate meio amargo e leite.", price: "15.00", order: 4 },
-    { id: "p-chocolate-quente", categoryId: "cat-cafes", name: "Chocolate quente", slug: "chocolate-quente",
-      description: "Chocolate derretido na hora, sem pó solúvel.", price: "14.00", order: 5 },
-
     // --- Doces -------------------------------------------------------------
     { id: "p-fatia-chocolate", categoryId: "cat-doces", name: "Fatia de bolo de chocolate",
       slug: "fatia-bolo-chocolate",
@@ -188,65 +188,24 @@ async function main() {
       slug: "fatia-bolo-morango",
       description: "Creme, morango fresco e merengue maçaricado.",
       price: "15.00", mediaId: "midia-bolo-morango", featured: true, order: 1 },
-    { id: "p-fatia-doce-de-leite", categoryId: "cat-doces", name: "Fatia de bolo de doce de leite",
-      slug: "fatia-bolo-doce-de-leite",
-      description: "Doce de leite entre camadas de chocolate branco.",
-      price: "15.00", mediaId: "midia-bolo-doce-de-leite", order: 2 },
-    { id: "p-fatia-coco", categoryId: "cat-doces", name: "Fatia de bolo de coco",
-      slug: "fatia-bolo-coco",
-      description: "Coco queimado, doce de leite e fios de ovos.",
-      price: "16.00", mediaId: "midia-bolo-coco", order: 3 },
     { id: "p-torta-brigadeiro", categoryId: "cat-doces", name: "Torta de brigadeiro",
       slug: "torta-brigadeiro",
       description: "Brigadeiro cremoso sobre base crocante.",
-      price: "16.00", promoPrice: "13.50", mediaId: "midia-torta-brigadeiro", order: 4 },
+      price: "16.00", promoPrice: "13.50", mediaId: "midia-torta-brigadeiro", order: 2 },
     { id: "p-brigadeiro", categoryId: "cat-doces", name: "Brigadeiro gourmet",
       slug: "brigadeiro-gourmet",
       description: "Unidade. Nove sabores no balcão todo dia.",
-      price: "6.00", mediaId: "midia-docinhos", featured: true, order: 5 },
-    { id: "p-cheesecake", categoryId: "cat-doces", name: "Cheesecake",
-      slug: "cheesecake",
-      description: "Fatia com calda de frutas vermelhas.",
-      price: "18.00", mediaId: "midia-cheesecake", available: false, order: 6 },
-
-    // --- Salgados ----------------------------------------------------------
-    { id: "p-pao-de-queijo", categoryId: "cat-salgados", name: "Pão de queijo", slug: "pao-de-queijo",
-      description: "Assado de hora em hora. Servido quente.", price: "7.00", order: 0 },
-    { id: "p-coxinha", categoryId: "cat-salgados", name: "Coxinha de frango", slug: "coxinha-de-frango",
-      description: "Frango desfiado com catupiry.", price: "9.50", order: 1 },
-    { id: "p-empada", categoryId: "cat-salgados", name: "Empada de palmito", slug: "empada-de-palmito",
-      description: "Massa amanteigada, recheio cremoso.", price: "9.00", order: 2 },
-    { id: "p-croissant", categoryId: "cat-salgados", name: "Croissant de presunto e queijo",
-      slug: "croissant-presunto-queijo",
-      description: "Massa folhada feita na casa.", price: "14.00", order: 3 },
-    { id: "p-misto", categoryId: "cat-salgados", name: "Misto quente", slug: "misto-quente",
-      description: "Pão de forma na chapa, presunto e queijo.", price: "13.00", order: 4 },
+      price: "6.00", mediaId: "midia-docinhos", featured: true, order: 3 },
 
     // --- Encomendas (categoria inativa: só aparecem em /encomenda) ----------
     { id: "e-bolo-chocolate", categoryId: "cat-encomendas", name: "Bolo inteiro de chocolate",
       slug: "encomenda-bolo-chocolate",
       description: "Serve de 12 a 15 pessoas. Montado no dia da retirada.",
       price: "120.00", mediaId: "midia-bolo-chocolate", order: 0 },
-    { id: "e-bolo-morango", categoryId: "cat-encomendas", name: "Bolo inteiro de morango",
-      slug: "encomenda-bolo-morango",
-      description: "Creme, morango fresco e merengue. Serve de 12 a 15 pessoas.",
-      price: "135.00", mediaId: "midia-bolo-morango", order: 1 },
-    { id: "e-bolo-doce-de-leite", categoryId: "cat-encomendas", name: "Bolo inteiro de doce de leite",
-      slug: "encomenda-bolo-doce-de-leite",
-      description: "Doce de leite e chocolate branco. Serve de 12 a 15 pessoas.",
-      price: "130.00", mediaId: "midia-bolo-doce-de-leite", order: 2 },
-    { id: "e-bolo-coco", categoryId: "cat-encomendas", name: "Bolo inteiro de coco",
-      slug: "encomenda-bolo-coco",
-      description: "Coco queimado, doce de leite e fios de ovos.",
-      price: "140.00", mediaId: "midia-bolo-coco", order: 3 },
-    { id: "e-torta-brigadeiro", categoryId: "cat-encomendas", name: "Torta inteira de brigadeiro",
-      slug: "encomenda-torta-brigadeiro",
-      description: "Base crocante e brigadeiro cremoso. Serve de 10 a 12 pessoas.",
-      price: "110.00", mediaId: "midia-torta-brigadeiro", order: 4 },
     { id: "e-cento-brigadeiro", categoryId: "cat-encomendas", name: "Cento de brigadeiros",
       slug: "encomenda-cento-brigadeiros",
       description: "Cem unidades. Você escolhe os sabores na conversa.",
-      price: "225.00", mediaId: "midia-docinhos", order: 5 },
+      price: "225.00", mediaId: "midia-docinhos", order: 1 },
   ];
 
   for (const i of itens) {
@@ -389,14 +348,7 @@ async function main() {
   });
 
   // O cardápio de encomenda. O admin escolhe o que entra aqui e em que ordem.
-  const itensEncomenda = [
-    "e-torta-brigadeiro",
-    "e-bolo-chocolate",
-    "e-bolo-morango",
-    "e-bolo-doce-de-leite",
-    "e-bolo-coco",
-    "e-cento-brigadeiro",
-  ];
+  const itensEncomenda = ["e-bolo-chocolate", "e-cento-brigadeiro"];
 
   for (const [i, productId] of itensEncomenda.entries()) {
     await prisma.orderSectionItem.upsert({

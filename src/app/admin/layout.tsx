@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { estaLogado } from "@/lib/auth";
 import { sair } from "./acoes";
+import { BotaoInicio } from "./voltar";
 
 export const metadata: Metadata = {
   title: "Painel | Dalami",
@@ -31,6 +32,7 @@ export default async function LayoutAdmin({
           </Link>
 
           <div className="flex items-center gap-3">
+            <BotaoInicio />
             <Link
               href="/"
               target="_blank"

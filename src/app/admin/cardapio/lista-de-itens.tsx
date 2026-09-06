@@ -64,18 +64,44 @@ export function ListaDeItens({ itens }: { itens: ItemDaLista[] }) {
           </div>
 
           {/* Ligar e desligar sem abrir o item: é a mudança mais comum do dia a
-              dia, tipo "acabou a coxinha". */}
-          <form action={alternar}>
+              dia, tipo "acabou a coxinha".
+
+              É um interruptor, e não um botão de texto, porque um botão
+              escrito "Tem hoje" parece que ele MOSTRA um estado, e a pessoa
+              não descobre que dá para clicar até clicar sem querer. Um
+              interruptor já se apresenta como coisa de ligar e desligar. */}
+          <form action={alternar} className="shrink-0">
             <input type="hidden" name="id" value={p.id} />
             <button
               type="submit"
-              className={`btn rounded-full px-3 py-1.5 text-[0.65rem] font-medium transition-colors ${
+              role="switch"
+              aria-checked={p.disponivel}
+              title={
                 p.disponivel
-                  ? "bg-oliva/12 text-oliva-escuro hover:bg-oliva/20"
-                  : "bg-terracota/12 text-terracota hover:bg-terracota/20"
-              }`}
+                  ? "Está à venda. Clique para marcar que acabou."
+                  : "Marcado como esgotado. Clique para voltar a vender."
+              }
+              className="btn flex items-center gap-2 rounded-full px-2 py-1.5 transition-colors hover:bg-tinta/5"
             >
-              {p.disponivel ? "Tem hoje" : "Não tem hoje"}
+              <span
+                aria-hidden="true"
+                className={`relative block h-5 w-9 rounded-full transition-colors ${
+                  p.disponivel ? "bg-oliva" : "bg-tinta/25"
+                }`}
+              >
+                <span
+                  className={`absolute top-0.5 block size-4 rounded-full bg-creme-alto transition-all ${
+                    p.disponivel ? "left-[1.15rem]" : "left-0.5"
+                  }`}
+                />
+              </span>
+              <span
+                className={`text-[0.68rem] font-medium ${
+                  p.disponivel ? "text-oliva-escuro" : "text-tinta-tenue"
+                }`}
+              >
+                {p.disponivel ? "Tem hoje" : "Acabou"}
+              </span>
             </button>
           </form>
 

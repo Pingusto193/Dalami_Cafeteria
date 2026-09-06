@@ -5,6 +5,7 @@ import {
   acaoDoAdmin,
   apelidoDe,
   ligado,
+  precoParaBanco,
   texto,
   textoOuNulo,
   type Resultado,
@@ -143,24 +144,93 @@ export async function salvarEncomenda(
   }, "Encomenda salva.");
 }
 
-export async function adicionarItemEncomenda(
+/**
+ * Cria ou edita um item de encomenda.
+ *
+ * Antes esta tela tinha uma caixa de seleção para escolher um produto que já
+ * existia no cardápio. Isso obrigava a criar o item numa tela e adicioná-lo em
+ * outra, o que ninguém adivinha. Agora o item nasce aqui mesmo, com foto e
+ * preço, do mesmo jeito que um item do cardápio.
+ *
+ * Os itens vivem numa categoria desligada, então não aparecem no cardápio do
+ * dia a dia, só na página de encomenda.
+ */
+export async function salvarItemEncomenda(
   _a: Resultado | null,
   dados: FormData,
 ): Promise<Resultado> {
   return acaoDoAdmin(async () => {
-    const productId = texto(dados.get("produto"));
-    if (!productId) throw new Error("Escolha um item.");
+    const id = textoOuNulo(dados.get("id"));
+    const nome = texto(dados.get("nome"));
+    if (!nome) throw new Error("Dê um nome para o item.");
 
-    const ja = await prisma.orderSectionItem.findUnique({
-      where: { sectionId_productId: { sectionId: "singleton", productId } },
+    const preco = precoParaBanco(dados.get("preco"));
+    if (preco === null) throw new Error("Preencha o preço.");
+
+    const campos = {
+      name: nome,
+      description: textoOuNulo(dados.get("descricao")),
+      price: preco,
+      mediaId: textoOuNulo(dados.get("imagem")),
+    };
+
+    if (id) {
+      await prisma.product.update({ where: { id }, data: campos });
+      return;
+    }
+
+    // A categoria das encomendas fica desligada de propósito: os itens dela
+    // não entram no cardápio do dia, só na página de encomenda.
+    const categoria = await prisma.category.upsert({
+      where: { slug: "encomendas" },
+      update: {},
+      create: {
+        name: "Encomendas",
+        slug: "encomendas",
+        description: "Feitos sob encomenda.",
+        active: false,
+        order: 99,
+      },
     });
-    if (ja) throw new Error("Esse item já está na lista de encomenda.");
 
-    const ultimo = await prisma.orderSectionItem.findFirst({ orderBy: { order: "desc" } });
+    const ultimoProduto = await prisma.product.findFirst({
+      where: { categoryId: categoria.id },
+      orderBy: { order: "desc" },
+    });
+
+    const produto = await prisma.product.create({
+      data: {
+        ...campos,
+        categoryId: categoria.id,
+        slug: await apelidoEncomendaLivre(nome),
+        order: (ultimoProduto?.order ?? -1) + 1,
+      },
+    });
+
+    const ultimoItem = await prisma.orderSectionItem.findFirst({
+      orderBy: { order: "desc" },
+    });
+
     await prisma.orderSectionItem.create({
-      data: { sectionId: "singleton", productId, order: (ultimo?.order ?? -1) + 1 },
+      data: {
+        sectionId: "singleton",
+        productId: produto.id,
+        order: (ultimoItem?.order ?? -1) + 1,
+      },
     });
-  }, "Item adicionado à encomenda.");
+  }, "Item salvo.");
+}
+
+/** O endereço do item no site precisa ser único. O dono nunca vê isso. */
+async function apelidoEncomendaLivre(nome: string): Promise<string> {
+  const base = `encomenda-${apelidoDe(nome)}` || "encomenda-item";
+  let tentativa = base;
+  for (let i = 2; i < 50; i++) {
+    const existe = await prisma.product.findUnique({ where: { slug: tentativa } });
+    if (!existe) return tentativa;
+    tentativa = `${base}-${i}`;
+  }
+  return `${base}-${Date.now()}`;
 }
 
 export async function removerItemEncomenda(
@@ -168,7 +238,20 @@ export async function removerItemEncomenda(
   dados: FormData,
 ): Promise<Resultado> {
   return acaoDoAdmin(async () => {
-    await prisma.orderSectionItem.delete({ where: { id: texto(dados.get("id")) } });
+    const item = await prisma.orderSectionItem.findUnique({
+      where: { id: texto(dados.get("id")) },
+      include: { product: { include: { category: true } } },
+    });
+    if (!item) throw new Error("Item não encontrado.");
+
+    // Se o item nasceu aqui (mora na categoria desligada de encomendas),
+    // apagar da lista é apagar o item, porque ele não existe em outro lugar.
+    // Um item que veio do cardápio normal só sai da lista e continua no site.
+    if (item.product.category.slug === "encomendas") {
+      await prisma.product.delete({ where: { id: item.productId } });
+    } else {
+      await prisma.orderSectionItem.delete({ where: { id: item.id } });
+    }
   }, "Item removido da encomenda.");
 }
 
