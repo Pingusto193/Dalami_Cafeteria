@@ -66,6 +66,37 @@ body {
 
 html {
   scroll-behavior: smooth;
+
+  /* A barra de rolagem padrão do Windows é cinza, larga e destoa da paleta.
+     Fica fina e cor de café, combinando com o resto.
+
+     Fina, e não escondida: a barra também diz onde a pessoa está na página e
+     quanto falta. Sumir com ela deixaria o site mais bonito e mais difícil de
+     usar, principalmente no cardápio, que é longo. */
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--color-cacau) 35%, transparent) transparent;
+}
+
+/* Chrome, Edge e Safari ignoram as duas linhas acima e precisam destas. */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: color-mix(in srgb, var(--color-cacau) 28%, transparent);
+  border-radius: 9999px;
+  /* A borda transparente afina o puxador sem estreitar a área de clique. */
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: color-mix(in srgb, var(--color-cacau) 45%, transparent);
 }
 
 body {

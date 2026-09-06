@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { FitaDourada } from "@/components/cliente";
 import { DadosDoGoogle } from "@/components/dados-do-google";
-import { WhatsAppFlutuante } from "@/components/whatsapp-flutuante";
 
 type Canal = { nome: string; url: string; tipo: string } | null;
 
@@ -39,28 +38,12 @@ export function Marca({ claro = false }: { claro?: boolean }) {
  * Sem menu de navegação de propósito. A home já leva para cardápio e encomenda
  * nas próprias seções, e um menu repetindo isso no topo só divide a atenção.
  */
-export function Cabecalho({ canal, whatsapp }: { canal: Canal; whatsapp?: string | null }) {
+export function Cabecalho({ canal }: { canal: Canal }) {
   return (
     <>
-      {/* Dados estruturados e botão flutuante moram aqui porque só as páginas
-          públicas usam o Cabecalho. No painel eles não fazem sentido. */}
+      {/* Os dados estruturados moram aqui porque só as páginas públicas usam
+          o Cabecalho. No painel eles não fazem sentido. */}
       <DadosDoGoogle />
-      {whatsapp && <WhatsAppFlutuante href={whatsapp} />}
-      {/* Abertura da marca. É CSS puro e vem no HTML do servidor, então já
-          está pintada no primeiro quadro, sem piscar o conteúdo antes.
-          Mora aqui, e não no layout raiz, para não aparecer no painel. */}
-      <div className="abertura" aria-hidden="true">
-        <div className="abertura-conteudo text-center">
-          <p className="abertura-nome font-display text-[clamp(2.6rem,9vw,4.5rem)] leading-none font-semibold tracking-tight text-cacau">
-            Dalami
-          </p>
-          <div className="abertura-fita mx-auto mt-5 h-px w-32 bg-dourado" />
-          <p className="abertura-tipo mt-5 font-rotulo text-[0.6rem] uppercase tracking-[0.42em] text-tinta-tenue">
-            Confeitaria e Cafeteria
-          </p>
-        </div>
-      </div>
-
       <header className="sticky top-0 z-40 border-b border-tinta/8 bg-creme-fundo/85 backdrop-blur-md">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-6 px-5 py-4">
         <Link href="/" aria-label="Dalami Confeitaria e Cafeteria, ir para a página inicial">

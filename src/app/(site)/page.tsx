@@ -263,16 +263,10 @@ export default async function Home() {
                 WhatsApp
               </a>
             )}
-            {canal && (
-              <a
-                href={canal.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn rounded-full bg-terracota px-6 py-3 text-sm font-medium text-creme-alto transition-colors hover:bg-terracota-claro"
-              >
-                Comprar no {canal.nome}
-              </a>
-            )}
+            {/* Sem o botão de compra aqui: o mesmo botão já fica fixo no topo,
+                visível o tempo todo. Repetir a ação no fim da página não dá
+                uma segunda chance, só divide a atenção do que esta seção
+                existe para fazer, que é falar com a casa. */}
             {rodape.redes.map((r) => (
               <a
                 key={r.url}
@@ -293,7 +287,7 @@ export default async function Home() {
   return (
     <>
       <PausaEmAbaEscondida />
-      <Cabecalho canal={canal} whatsapp={rodape.whatsapp} />
+      <Cabecalho canal={canal} />
       <main id="conteudo">
         {/* Título da página, invisível na tela e presente para busca e leitor
             de tela. O maior texto que aparece é o do destaque, que muda a cada
