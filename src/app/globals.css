@@ -309,7 +309,17 @@ h3 {
 .transicao > span {
   flex: 1;
   background-color: var(--color-cacau);
-  will-change: transform;
+}
+
+/* Sobreposição de 2px entre os quadros. Cada `<span>` que anima transform
+   ganha a própria camada de composição do navegador, e o limite entre duas
+   camadas vizinhas pode arredondar o subpixel de um jeito levemente diferente
+   em cada uma — sobra um risco fino do fundo por baixo aparecendo na emenda.
+   A sobreposição garante que um quadro sempre cobre um pouquinho do vizinho,
+   então não existe brecha nenhuma para o fundo escapar, não importa como o
+   navegador arredondar. */
+.transicao > span:not(:first-child) {
+  margin-left: -2px;
 }
 
 /* FASE 1, cobrir: os três quadros sobem de baixo até fechar a tela.
@@ -319,12 +329,14 @@ h3 {
    tela durante o próprio atraso, em vez de esperar embaixo a vez deles. */
 .transicao-cobrindo > span {
   animation: quadro-cobre 0.55s var(--ease-saida) both;
+  will-change: transform;
 }
 
 /* FASE 2, revelar: eles continuam subindo e saem por cima, mostrando a
    página nova, que a essa altura já está montada por baixo. */
 .transicao-revelando > span {
   animation: quadro-revela 0.55s var(--ease-saida) both;
+  will-change: transform;
 }
 
 @keyframes quadro-cobre {
