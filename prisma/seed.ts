@@ -34,7 +34,15 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../src/generated/prisma/client";
 import "dotenv/config";
 
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) throw new Error("DATABASE_URL não está definida.");
+
+// O ?schema= da URL não tem efeito nenhum sobre o driver pg (mesmo bug que já
+// mordeu o site em produção): precisa ir como segundo argumento do PrismaPg,
+// não embutido na connection string. Ver src/lib/prisma.ts para a explicação
+// completa.
+const schema = new URL(connectionString).searchParams.get("schema") ?? undefined;
+const adapter = new PrismaPg({ connectionString }, schema ? { schema } : undefined);
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
