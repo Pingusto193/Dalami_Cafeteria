@@ -14,26 +14,33 @@ function createPrismaClient() {
     );
   }
 
-  // Diagnóstico temporário: mostra no log do servidor qual host e qual schema
-  // estão sendo usados de verdade, sem nunca imprimir a senha. Existe porque
-  // duas tentativas seguidas de deploy caíram no schema "public" mesmo com
-  // ?schema=dalami supostamente configurado no Render — a única forma de
-  // saber com certeza o que o processo está recebendo é o próprio processo
-  // dizer. Remover depois que o deploy estabilizar.
+  /**
+   * O parâmetro `?schema=` na URL NÃO tem efeito nenhum aqui, e essa é a causa
+   * de um bug real que já foi ao ar: as migrações passavam (a ferramenta de
+   * migração do Prisma entende `?schema=`), mas toda consulta do site caía em
+   * "tabela não existe", porque o `@prisma/adapter-pg` conecta usando o driver
+   * `pg` puro, que não sabe o que é `?schema=` — não é um parâmetro real do
+   * Postgres, é uma invenção só da ferramenta de migração.
+   *
+   * O jeito certo, documentado no próprio tipo `PrismaPgOptions` do pacote, é
+   * passar o schema como segundo argumento do construtor. Com isso o Prisma
+   * escreve o nome do schema direto no SQL que gera (`"dalami"."Category"`),
+   * então funciona sempre, sem depender de nenhum comportamento do banco.
+   *
+   * Continuamos lendo o schema DA URL só para não duplicar a configuração:
+   * quem mexe no banco muda um lugar só (o `?schema=` que a migração já usa),
+   * e este trecho aproveita o mesmo valor.
+   */
+  let schema: string | undefined;
   try {
-    const u = new URL(connectionString);
-    console.log(
-      `[prisma] host=${u.hostname} banco=${u.pathname.replace("/", "")} ` +
-        `schema=${u.searchParams.get("schema") ?? "(nenhum na URL, banco usa o padrão)"} ` +
-        `tamanho_da_url=${connectionString.length}`,
-    );
+    schema = new URL(connectionString).searchParams.get("schema") ?? undefined;
   } catch {
-    console.log(
-      `[prisma] DATABASE_URL não é uma URL válida (tamanho: ${connectionString.length} caracteres)`,
-    );
+    throw new Error("DATABASE_URL não é uma URL válida.");
   }
 
-  return new PrismaClient({ adapter: new PrismaPg({ connectionString }) });
+  return new PrismaClient({
+    adapter: new PrismaPg({ connectionString }, schema ? { schema } : undefined),
+  });
 }
 
 const globalForPrisma = globalThis as unknown as {
