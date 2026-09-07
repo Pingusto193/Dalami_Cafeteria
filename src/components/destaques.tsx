@@ -60,8 +60,9 @@ export function Destaques({ destaques }: { destaques: DestaqueView[] }) {
     <section
       aria-roledescription="carrossel"
       aria-label="Destaques da casa"
-      onMouseEnter={() => setPausado(true)}
-      onMouseLeave={() => setPausado(false)}
+      // Só o foco por teclado pausa em nível de seção inteira: alguém
+      // navegando com Tab não pode ter a bolinha trocar embaixo do dedo. O
+      // mouse é tratado à parte, só na foto — ver comentário mais abaixo.
       onFocusCapture={() => setPausado(true)}
       onBlurCapture={() => setPausado(false)}
     >
@@ -161,8 +162,18 @@ export function Destaques({ destaques }: { destaques: DestaqueView[] }) {
           )}
         </div>
 
-        {/* --- Caixa de imagem ------------------------------------------ */}
-        <div className="relative order-1 lg:order-2">
+        {/* --- Caixa de imagem ------------------------------------------
+            O mouse pausa só aqui, na foto, não na seção inteira. Antes o
+            gatilho era o <section> todo — texto, preço, botão, bolinhas — uma
+            área enorme que ocupa quase a largura da tela no topo da página.
+            Bastava o mouse ficar parado lendo o texto para o carrossel travar
+            de vez, e parecia bug de verdade, não pausa intencional. Aqui, só
+            quem está olhando a foto em si segura a troca. */}
+        <div
+          className="relative order-1 lg:order-2"
+          onMouseEnter={() => setPausado(true)}
+          onMouseLeave={() => setPausado(false)}
+        >
           <div className="relative aspect-4/5 overflow-hidden rounded-[1.75rem] bg-creme sm:aspect-square lg:aspect-4/5">
             {destaques.map((d, i) => (
               <div
