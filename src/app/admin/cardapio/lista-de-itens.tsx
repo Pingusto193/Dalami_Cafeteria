@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useActionState } from "react";
+import { useActionState, useOptimistic } from "react";
 import { ListaOrdenavel } from "../ordenavel";
 import { reordenar } from "../acoes-ordem";
 import { alternarDisponivel } from "./acoes";
@@ -20,15 +20,27 @@ export type ItemDaLista = {
 export function ListaDeItens({ itens }: { itens: ItemDaLista[] }) {
   const [, alternar] = useActionState(alternarDisponivel, null);
 
+  /**
+   * O interruptor vira na tela na hora, antes de o servidor responder.
+   *
+   * Antes ele só mudava quando a resposta chegava, e no celular essa espera
+   * parecia o toque não ter pegado: a pessoa clicava de novo e acabava
+   * desligando e religando o item. Se o servidor recusar, o React descarta o
+   * palpite sozinho e a lista volta ao estado real.
+   */
+  const [lista, virarNaHora] = useOptimistic(itens, (atual, id: string) =>
+    atual.map((p) => (p.id === id ? { ...p, disponivel: !p.disponivel } : p)),
+  );
+
   return (
     <ListaOrdenavel
-      itens={itens}
+      itens={lista}
       aoReordenar={(ids) => reordenar("product", ids)}
       className="space-y-2"
     >
       {(p) => (
         <div
-          className={`flex items-center gap-3 rounded-xl border border-tinta/10 bg-creme-alto p-3 ${
+          className={`flex flex-wrap items-center gap-3 rounded-xl border border-tinta/10 bg-creme-alto p-3 ${
             p.disponivel ? "" : "opacity-60"
           }`}
         >
@@ -63,54 +75,66 @@ export function ListaDeItens({ itens }: { itens: ItemDaLista[] }) {
             </p>
           </div>
 
-          {/* Ligar e desligar sem abrir o item: é a mudança mais comum do dia a
-              dia, tipo "acabou a coxinha".
+          {/* No celular os controles descem para a própria linha (`basis-full`).
+              Espremidos na mesma linha do nome eles roubavam quase toda a
+              largura, e o nome do item ficava num filete de duas ou três
+              letras por linha, parecendo que um estava por cima do outro. */}
+          <div className="flex basis-full items-center justify-end gap-1 sm:basis-auto">
+            {/* Ligar e desligar sem abrir o item: é a mudança mais comum do dia
+                a dia, tipo "acabou a coxinha".
 
-              É um interruptor, e não um botão de texto, porque um botão
-              escrito "Tem hoje" parece que ele MOSTRA um estado, e a pessoa
-              não descobre que dá para clicar até clicar sem querer. Um
-              interruptor já se apresenta como coisa de ligar e desligar. */}
-          <form action={alternar} className="shrink-0">
-            <input type="hidden" name="id" value={p.id} />
-            <button
-              type="submit"
-              role="switch"
-              aria-checked={p.disponivel}
-              title={
-                p.disponivel
-                  ? "Está à venda. Clique para marcar que acabou."
-                  : "Marcado como esgotado. Clique para voltar a vender."
-              }
-              className="btn flex items-center gap-2 rounded-full px-2 py-1.5 transition-colors hover:bg-tinta/5"
+                É um interruptor, e não um botão de texto, porque um botão
+                escrito "Tem hoje" parece que ele MOSTRA um estado, e a pessoa
+                não descobre que dá para clicar até clicar sem querer. Um
+                interruptor já se apresenta como coisa de ligar e desligar. */}
+            <form
+              action={(dados: FormData) => {
+                virarNaHora(p.id);
+                alternar(dados);
+              }}
+              className="shrink-0"
             >
-              <span
-                aria-hidden="true"
-                className={`relative block h-5 w-9 rounded-full transition-colors ${
-                  p.disponivel ? "bg-oliva" : "bg-tinta/25"
-                }`}
+              <input type="hidden" name="id" value={p.id} />
+              <button
+                type="submit"
+                role="switch"
+                aria-checked={p.disponivel}
+                title={
+                  p.disponivel
+                    ? "Está à venda. Clique para marcar que acabou."
+                    : "Marcado como esgotado. Clique para voltar a vender."
+                }
+                className="btn flex items-center gap-2 rounded-full px-2 py-1.5 transition-colors hover:bg-tinta/5"
               >
                 <span
-                  className={`absolute top-0.5 block size-4 rounded-full bg-creme-alto transition-all ${
-                    p.disponivel ? "left-[1.15rem]" : "left-0.5"
+                  aria-hidden="true"
+                  className={`relative block h-5 w-9 rounded-full transition-colors ${
+                    p.disponivel ? "bg-oliva" : "bg-tinta/25"
                   }`}
-                />
-              </span>
-              <span
-                className={`text-[0.68rem] font-medium ${
-                  p.disponivel ? "text-oliva-escuro" : "text-tinta-tenue"
-                }`}
-              >
-                {p.disponivel ? "Tem hoje" : "Acabou"}
-              </span>
-            </button>
-          </form>
+                >
+                  <span
+                    className={`absolute top-0.5 block size-4 rounded-full bg-creme-alto transition-all ${
+                      p.disponivel ? "left-[1.15rem]" : "left-0.5"
+                    }`}
+                  />
+                </span>
+                <span
+                  className={`text-[0.68rem] font-medium ${
+                    p.disponivel ? "text-oliva-escuro" : "text-tinta-tenue"
+                  }`}
+                >
+                  {p.disponivel ? "Tem hoje" : "Acabou"}
+                </span>
+              </button>
+            </form>
 
-          <Link
-            href={`/admin/cardapio/${p.id}`}
-            className="btn rounded-full px-4 py-2 text-xs text-tinta-suave transition-colors hover:text-cacau"
-          >
-            Editar
-          </Link>
+            <Link
+              href={`/admin/cardapio/${p.id}`}
+              className="btn rounded-full px-4 py-2 text-xs text-tinta-suave transition-colors hover:text-cacau"
+            >
+              Editar
+            </Link>
+          </div>
         </div>
       )}
     </ListaOrdenavel>

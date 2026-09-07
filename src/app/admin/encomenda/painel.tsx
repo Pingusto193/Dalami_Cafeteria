@@ -191,7 +191,7 @@ export function PainelEncomenda({
                   </Recolhivel>
 
                   <Recolhivel aberto={editando !== it.id}>
-                    <div className="flex items-center gap-3 rounded-xl border border-tinta/10 bg-creme-alto p-3">
+                    <div className="flex flex-wrap items-center gap-3 rounded-xl border border-tinta/10 bg-creme-alto p-3">
                       <div className="relative size-12 shrink-0 overflow-hidden rounded-lg bg-creme">
                         {it.imagem ? (
                           <Image
@@ -216,21 +216,24 @@ export function PainelEncomenda({
                         </p>
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEditando(it.id);
-                          setCriando(false);
-                        }}
-                        className="btn rounded-full px-4 py-2 text-xs text-tinta-suave transition-colors hover:text-cacau"
-                      >
-                        Editar
-                      </button>
+                      {/* No celular os botões descem para a própria linha. */}
+                      <div className="flex basis-full items-center justify-end gap-1 sm:basis-auto">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditando(it.id);
+                            setCriando(false);
+                          }}
+                          className="btn rounded-full px-4 py-2 text-xs text-tinta-suave transition-colors hover:text-cacau"
+                        >
+                          Editar
+                        </button>
 
-                      <form action={acaoRemover}>
-                        <input type="hidden" name="id" value={it.id} />
-                        <Excluir />
-                      </form>
+                        <form action={acaoRemover}>
+                          <input type="hidden" name="id" value={it.id} />
+                          <Excluir />
+                        </form>
+                      </div>
                     </div>
                   </Recolhivel>
                 </>

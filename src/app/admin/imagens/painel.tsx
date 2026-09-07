@@ -110,7 +110,9 @@ function Enviar() {
       </p>
 
       <label className="btn mt-5 inline-flex cursor-pointer rounded-full bg-oliva px-6 py-3 text-sm font-medium text-creme-alto transition-colors hover:bg-oliva-escuro">
-        {enviando ? "Enviando..." : "Escolher fotos do computador"}
+        {/* Sem "do computador": no celular a frase fica errada, porque a foto
+            vem da galeria ou da câmera, não de computador nenhum. */}
+        {enviando ? "Enviando..." : "Escolher fotos"}
         <input
           ref={entrada}
           type="file"

@@ -424,22 +424,6 @@ export async function salvarSite(_a: Resultado | null, dados: FormData): Promise
   }, "Dados do site salvos.");
 }
 
-/** Salva a palavrinha de cima e a frase grande de uma seção da home. */
-export async function salvarTextoDaSecao(
-  _a: Resultado | null,
-  dados: FormData,
-): Promise<Resultado> {
-  return acaoDoAdmin(async () => {
-    await prisma.siteSection.update({
-      where: { key: texto(dados.get("chave")) },
-      data: {
-        eyebrow: textoOuNulo(dados.get("etiqueta")),
-        heading: textoOuNulo(dados.get("titulo")),
-      },
-    });
-  }, "Texto da seção salvo.");
-}
-
 /* ==========================================================================
    FERIADOS E FECHAMENTO PONTUAL
    ========================================================================== */

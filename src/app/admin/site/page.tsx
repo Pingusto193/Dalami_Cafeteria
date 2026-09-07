@@ -2,7 +2,6 @@ import { prisma } from "@/lib/prisma";
 import { imagensDisponiveis } from "@/lib/midias";
 import { Titulo } from "../componentes";
 import { PainelSite } from "./painel";
-import { TextosDasSecoes } from "./textos";
 
 /** O que cada seção da página inicial é, em palavras que o dono reconhece. */
 const NOMES_DAS_SECOES: Record<string, { nome: string; explica: string }> = {
@@ -14,9 +13,6 @@ const NOMES_DAS_SECOES: Record<string, { nome: string; explica: string }> = {
   hours: { nome: "Horário", explica: "A tabela de horários e o aberto/fechado." },
   contact: { nome: "Contato", explica: "Os botões de WhatsApp, iFood e redes." },
 };
-
-/** Seções cujo título grande vem do conteúdo, não de um campo próprio. */
-const SEM_TITULO_PROPRIO = new Set(["highlights", "order-cta", "about", "location"]);
 
 export default async function AdminSite() {
   const [config, secoes, imagens] = await Promise.all([
@@ -59,19 +55,6 @@ export default async function AdminSite() {
         }))}
         imagens={imagens}
       />
-
-      <div className="mt-6 max-w-3xl">
-        <TextosDasSecoes
-          secoes={secoes.map((s) => ({
-            chave: s.key,
-            nome: NOMES_DAS_SECOES[s.key]?.nome ?? s.key,
-            explica: NOMES_DAS_SECOES[s.key]?.explica ?? "",
-            etiqueta: s.eyebrow ?? "",
-            titulo: s.heading ?? "",
-            temTitulo: !SEM_TITULO_PROPRIO.has(s.key),
-          }))}
-        />
-      </div>
     </>
   );
 }

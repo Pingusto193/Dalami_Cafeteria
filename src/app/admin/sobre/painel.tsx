@@ -152,7 +152,7 @@ export function PainelSobre({
               </Recolhivel>
 
               <Recolhivel aberto={editando !== b.id}>
-                <div className="flex items-start gap-4">
+                <div className="flex flex-wrap items-start gap-4">
                   <div className="min-w-0 flex-1">
                     <p className="flex flex-wrap items-center gap-2 font-display text-lg font-semibold text-cacau">
                       {b.titulo || "(sem título)"}
@@ -170,7 +170,9 @@ export function PainelSobre({
                     </p>
                   </div>
 
-                  <div className="flex shrink-0 items-center gap-1">
+                  {/* No celular descem para a própria linha, senão espremem
+                      o texto do bloco até ele virar um filete. */}
+                  <div className="flex basis-full shrink-0 items-center justify-end gap-1 sm:basis-auto">
                     <button
                       type="button"
                       onClick={() => {

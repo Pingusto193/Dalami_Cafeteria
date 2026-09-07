@@ -90,7 +90,7 @@ export function PainelDestaques({
             >
               {(d) => (
                 <div
-                  className={`flex items-center gap-3 rounded-xl border border-tinta/10 bg-creme-alto p-3 ${
+                  className={`flex flex-wrap items-center gap-3 rounded-xl border border-tinta/10 bg-creme-alto p-3 ${
                     d.ativo ? "" : "opacity-60"
                   }`}
                 >
@@ -115,30 +115,37 @@ export function PainelDestaques({
                     )}
                   </div>
 
-                  <form action={acaoEditar} className="flex items-center gap-2">
-                    <input type="hidden" name="id" value={d.id} />
-                    <input type="hidden" name="produto" value={d.produtoId ?? ""} />
-                    <label className="flex cursor-pointer items-center gap-2 text-xs text-tinta-suave">
-                      <input
-                        type="checkbox"
-                        name="ativo"
-                        defaultChecked={d.ativo}
-                        className="size-4 accent-[var(--color-oliva)]"
-                      />
-                      no site
-                    </label>
-                    <button
-                      type="submit"
-                      className="btn rounded-full px-3 py-1.5 text-xs text-tinta-suave transition-colors hover:text-cacau"
-                    >
-                      Aplicar
-                    </button>
-                  </form>
+                  {/* No celular os controles descem para a própria linha
+                      (`basis-full`). São três coisas — a caixinha "no site", o
+                      "Aplicar" e o "Remover" — e na mesma linha do nome elas
+                      não cabiam: o nome do destaque virava um filete de duas
+                      letras por linha, parecendo texto por cima de texto. */}
+                  <div className="flex basis-full flex-wrap items-center justify-end gap-2 sm:basis-auto">
+                    <form action={acaoEditar} className="flex items-center gap-2">
+                      <input type="hidden" name="id" value={d.id} />
+                      <input type="hidden" name="produto" value={d.produtoId ?? ""} />
+                      <label className="flex cursor-pointer items-center gap-2 text-xs text-tinta-suave">
+                        <input
+                          type="checkbox"
+                          name="ativo"
+                          defaultChecked={d.ativo}
+                          className="size-4 accent-[var(--color-oliva)]"
+                        />
+                        no site
+                      </label>
+                      <button
+                        type="submit"
+                        className="btn rounded-full px-3 py-1.5 text-xs text-tinta-suave transition-colors hover:text-cacau"
+                      >
+                        Aplicar
+                      </button>
+                    </form>
 
-                  <form action={acaoApagar}>
-                    <input type="hidden" name="id" value={d.id} />
-                    <Excluir rotulo="Remover" />
-                  </form>
+                    <form action={acaoApagar}>
+                      <input type="hidden" name="id" value={d.id} />
+                      <Excluir rotulo="Remover" />
+                    </form>
+                  </div>
                 </div>
               )}
             </ListaOrdenavel>

@@ -80,12 +80,33 @@ export default async function Home() {
                     <p className="mt-2 text-sm leading-relaxed text-tinta-suave">{c.descricao}</p>
                   )}
                 </div>
-                <p className="mt-6 font-rotulo text-[0.62rem] uppercase tracking-[0.2em] text-terracota">
-                  {c.produtos.length} {c.produtos.length === 1 ? "item" : "itens"}
-                  <span className="ml-2 inline-block transition-transform group-hover:translate-x-1">
-                    &rarr;
+                {/* A contagem e a ação são duas coisas diferentes, e antes
+                    estavam na mesma linha minúscula: "4 itens →", tudo em
+                    0,62rem. A seta era o único sinal de que o quadro clicava,
+                    e ela só se mexia no hover — que no celular não existe.
+                    Agora a contagem fica neutra de um lado, e do outro fica um
+                    "Ver" com a seta dentro de um círculo desenhado, que já
+                    parece botão parado, sem depender de passar o mouse. */}
+                <div className="mt-6 flex items-center justify-between gap-3 border-t border-tinta/8 pt-4">
+                  <span className="font-rotulo text-[0.62rem] uppercase tracking-[0.2em] text-tinta-tenue">
+                    {c.produtos.length} {c.produtos.length === 1 ? "item" : "itens"}
                   </span>
-                </p>
+                  <span className="flex items-center gap-2 text-sm font-medium text-terracota">
+                    Ver
+                    <span className="grid size-8 place-items-center rounded-full border border-terracota/35 bg-terracota/8 transition-colors group-hover:border-terracota group-hover:bg-terracota group-hover:text-creme-alto">
+                      <svg
+                        viewBox="0 0 24 24"
+                        className="size-4"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.2"
+                        aria-hidden="true"
+                      >
+                        <path d="M9 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </span>
+                  </span>
+                </div>
               </Link>
             ))}
           </div>
